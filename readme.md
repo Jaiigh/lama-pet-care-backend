@@ -1,5 +1,3 @@
-<div align="center">
-
 # lama-backend
 # Set Environment `.env`
 ```
