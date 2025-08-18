@@ -1,5 +1,3 @@
-<div align="center">
-
 # lama-backend
 # Set Environment `.env`
 ```
@@ -9,6 +7,22 @@ PORT=8080
 JWT_SECRET_KEY=Test
 JWT_REFESH_SECRET_KEY=Test
 ```
-
-# Generate or Update Prisma
+# Install dependencies
+```
+go mod init lama-backend
+go get github.com/steebchen/prisma-client-go
 go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/schema.prisma dev
+go mod tidy
+```
+# Run development server
+```
+go run .
+```
+# Generate or Update Prisma
+```
+go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/schema.prisma dev
+```
+# Whenever packages are added or removed from the project
+```
+go mod tidy
+```
