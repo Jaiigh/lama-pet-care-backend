@@ -7,11 +7,59 @@ generator db {
     provider = "go run github.com/steebchen/prisma-client-go"
 }
 
-model User {
-    userId String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("user_id")
-    createdAt DateTime? @default(now()) @map("created_at")
-    updatedAt DateTime? @updatedAt @map("updated_at")
+model Admin {
+    AID String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
     email String @unique
     password String
-    role String @default("user")
+    name String
+    birthdate DateTime @db.Date
+    telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
+    address String @db.Text
+}
+
+model Caretaker {
+    CID String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+    email String @unique
+    password String
+    name String
+    birthdate DateTime @db.Date
+    telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
+    address String
+    specialties String?
+    startWorkingTime DateTime @db.Time @map("start_working_time")
+    endWorkingTime DateTime @db.Time @map("end_working_time")
+    rating Decimal? @default(0.0) @db.Decimal(2, 1)
+}
+
+model Doctor {
+    DID String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+    email String @unique
+    password String
+    name String
+    birthdate DateTime @db.Date
+    telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
+    address String
+    licenseNumber String @unique @map("license_number")
+    startDate DateTime @db.Date @map("start_date")
+    startWorkingTime DateTime @db.Time @map("start_working_time")
+    endWorkingTime DateTime @db.Time @map("end_working_time")
+}
+
+model Owner {
+    OID String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+    email String @unique
+    password String
+    name String
+    birthdate DateTime @db.Date
+    telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
+    address String
+    totalSpending Decimal? @default(0.00) @db.Decimal(12, 2) @map("total_spending")
 }
