@@ -34,11 +34,14 @@ func main() {
 
 	defer prismadb.PrismaDB.Prisma.Disconnect()
 
-	userRepo := repo.NewUsersRepository(prismadb)
+	adminRepo := repo.NewAdminRepository(prismadb)
+	ownerRepo := repo.NewOwnerRepository(prismadb)
+	caretakerRepo := repo.NewCaretakerRepository(prismadb)
+	doctorRepo := repo.NewDoctorRepository(prismadb)
 
-	sv0 := sv.NewUsersService(userRepo)
+	svAuth := sv.NewAuthService(adminRepo, ownerRepo, caretakerRepo, doctorRepo)
 
-	gw.NewHTTPGateway(app, sv0)
+	gw.NewHTTPGateway(app, svAuth)
 
 	PORT := os.Getenv("PORT")
 
