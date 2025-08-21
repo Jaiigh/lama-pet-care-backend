@@ -4,7 +4,6 @@ import (
 	"lama-backend/domain/entities"
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -56,16 +55,11 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 		})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    *token.Token,
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(6 * time.Hour),
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
 	})
-
-	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{Message: "success"})
 }
 
 func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
@@ -90,16 +84,11 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    *token.Token,
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(6 * time.Hour),
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
 	})
-
-	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{Message: "success"})
 }
 
 func (h *HTTPGateway) Logout(ctx *fiber.Ctx) error {
@@ -107,15 +96,6 @@ func (h *HTTPGateway) Logout(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    "",
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(-1 * time.Hour),
-	})
 
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
 		Message: "logout success",
