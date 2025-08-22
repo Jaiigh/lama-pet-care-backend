@@ -37,6 +37,8 @@ func (repo *caretakerRepository) InsertCaretaker(data entities.CreatedUserModel)
 		db.Caretaker.Address.Set(data.Address),
 		db.Caretaker.StartWorkingTime.Set(data.StartWorkTime),
 		db.Caretaker.EndWorkingTime.Set(data.EndWorkTime),
+		db.Caretaker.Specialties.Set(data.Specialization),
+		db.Caretaker.Rating.Set(data.Rating),
 	).Exec(repo.Context)
 
 	if err != nil {
