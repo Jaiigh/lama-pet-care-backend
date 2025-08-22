@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/shopspring/decimal"
 )
 
 func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
@@ -37,14 +38,11 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	if err := validate.Struct(bodyData); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
 	}
-
-	if role == "doctor" || role == "caretaker" {
-		if bodyData.StartWorkTime.IsZero() || bodyData.EndWorkTime.IsZero() {
-			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "start_work_time and end_work_time are required"})
-		}
-		if role == "doctor" && (bodyData.LicenseNumber == "" || bodyData.StartDate.IsZero()) {
-			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number and start_date are required for doctor"})
-		}
+	if role == "doctor" && bodyData.LicenseNumber == "" {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
+	}
+	if role == "caretaker" && !bodyData.Rating.Equal(decimal.NewFromInt(0)) {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "caretaker cannot have a rating when registering"})
 	}
 
 	hashPassword, err := utils.HashPassword(bodyData.Password)
