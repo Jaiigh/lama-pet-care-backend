@@ -25,7 +25,7 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 
 func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	role := ctx.Query("role")
-	if role != "admin" && role != "doctor" && role != "caretaker" && role != "owner" {
+	if role != "doctor" && role != "caretaker" && role != "owner" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
