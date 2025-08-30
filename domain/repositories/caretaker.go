@@ -35,10 +35,7 @@ func (repo *caretakerRepository) InsertCaretaker(data entities.CreatedUserModel)
 		db.Caretaker.Birthdate.Set(data.BirthDate),
 		db.Caretaker.TelephoneNumber.Set(data.TelephoneNumber),
 		db.Caretaker.Address.Set(data.Address),
-		db.Caretaker.StartWorkingTime.Set(data.StartWorkTime),
-		db.Caretaker.EndWorkingTime.Set(data.EndWorkTime),
 		db.Caretaker.Specialties.Set(data.Specialization),
-		db.Caretaker.Rating.Set(data.Rating),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -55,8 +52,6 @@ func (repo *caretakerRepository) InsertCaretaker(data entities.CreatedUserModel)
 		BirthDate:       createdData.Birthdate,
 		TelephoneNumber: createdData.TelephoneNumber,
 		Address:         createdData.Address,
-		StartWorkTime:   createdData.StartWorkingTime,
-		EndWorkTime:     createdData.EndWorkingTime,
 	}, nil
 }
 
@@ -94,6 +89,16 @@ func (repo *caretakerRepository) FindByID(userID string) (*entities.UserDataMode
 		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
 	}
 
+	startWorkTime, ok := user.StartWorkingTime()
+	if !ok {
+		return nil, fmt.Errorf("users -> FindByID: startWorkTime not ok")
+	}
+
+	endWorkTime, ok := user.EndWorkingTime()
+	if !ok {
+		return nil, fmt.Errorf("users -> FindByID: endWorkTime not ok")
+	}
+
 	rating, ok := user.Rating()
 	if !ok {
 		return nil, fmt.Errorf("users -> FindByID: Rating not ok")
@@ -110,8 +115,8 @@ func (repo *caretakerRepository) FindByID(userID string) (*entities.UserDataMode
 		TelephoneNumber: user.TelephoneNumber,
 		Address:         user.Address,
 		Specialization:  specialties,
-		StartWorkTime:   user.StartWorkingTime,
-		EndWorkTime:     user.EndWorkingTime,
+		StartWorkTime:   startWorkTime,
+		EndWorkTime:     endWorkTime,
 		Rating:          rating,
 	}, nil
 }

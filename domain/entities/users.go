@@ -36,16 +36,12 @@ type LoginUserModel struct {
 }
 
 type CreatedUserModel struct {
-	Email           string     `json:"email" validate:"required,email"`
-	Password        string     `json:"password" validate:"required"`
-	Name            string     `json:"name" validate:"required"`
-	BirthDate       time.Time  `json:"birth_date" validate:"required"`
-	TelephoneNumber string     `json:"telephone_number" validate:"required"`
-	Address         string     `json:"address" validate:"required"`
-	LicenseNumber   string     `json:"license_number,omitempty"`
-	StartDate       time.Time  `json:"start_date,omitempty"`
-	StartWorkTime   time.Time  `json:"start_work_time,omitempty"`
-	EndWorkTime     time.Time  `json:"end_work_time,omitempty"`
-	Specialization  string     `json:"specialization,omitempty"`
-	Rating          db.Decimal `json:"rating,omitempty"`
+	Email           string    `json:"email" validate:"required,email"`
+	Password        string    `json:"password" validate:"required"`
+	Name            string    `json:"name" validate:"required"`
+	BirthDate       time.Time `json:"birth_date" validate:"required"`
+	TelephoneNumber string    `json:"telephone_number" validate:"required"`
+	Address         string    `json:"address" validate:"required"`
+	LicenseNumber   string    `json:"license_number,omitempty"`
+	Specialization  string    `json:"specialization,omitempty"`
 }

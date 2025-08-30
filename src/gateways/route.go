@@ -19,4 +19,5 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	auth.Get("/check_token", middlewares.SetJWtHeaderHandler(), gateway.checkToken)
 	auth.Post("/register", gateway.Register)
 	auth.Post("/login", gateway.Login)
+	auth.Post("/create_admin", gateway.CreateAdmin)
 }

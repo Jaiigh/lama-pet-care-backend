@@ -30,8 +30,8 @@ model Caretaker {
     telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
     address String
     specialties String?
-    startWorkingTime DateTime @db.Time @map("start_working_time")
-    endWorkingTime DateTime @db.Time @map("end_working_time")
+    startWorkingTime DateTime? @db.Time @map("start_working_time")
+    endWorkingTime DateTime? @db.Time @map("end_working_time")
     rating Decimal? @default(0.0) @db.Decimal(2, 1)
 }
 
@@ -46,9 +46,9 @@ model Doctor {
     telephoneNumber String @unique @db.VarChar(10) @map("telephone_number")
     address String
     licenseNumber String @unique @map("license_number")
-    startDate DateTime @db.Date @map("start_date")
-    startWorkingTime DateTime @db.Time @map("start_working_time")
-    endWorkingTime DateTime @db.Time @map("end_working_time")
+    startDate DateTime? @db.Date @map("start_date")
+    startWorkingTime DateTime? @db.Time @map("start_working_time")
+    endWorkingTime DateTime? @db.Time @map("end_working_time")
 }
 
 model Owner {

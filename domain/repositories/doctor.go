@@ -36,9 +36,6 @@ func (repo *doctorRepository) InsertDoctor(data entities.CreatedUserModel) (*ent
 		db.Doctor.TelephoneNumber.Set(data.TelephoneNumber),
 		db.Doctor.Address.Set(data.Address),
 		db.Doctor.LicenseNumber.Set(data.LicenseNumber),
-		db.Doctor.StartDate.Set(data.StartDate),
-		db.Doctor.StartWorkingTime.Set(data.StartWorkTime),
-		db.Doctor.EndWorkingTime.Set(data.EndWorkTime),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -56,9 +53,6 @@ func (repo *doctorRepository) InsertDoctor(data entities.CreatedUserModel) (*ent
 		TelephoneNumber: createdData.TelephoneNumber,
 		Address:         createdData.Address,
 		LicenseNumber:   createdData.LicenseNumber,
-		StartDate:       createdData.StartDate,
-		StartWorkTime:   createdData.StartWorkingTime,
-		EndWorkTime:     createdData.EndWorkingTime,
 	}, nil
 }
 
@@ -91,6 +85,21 @@ func (repo *doctorRepository) FindByID(userID string) (*entities.UserDataModel, 
 		return nil, fmt.Errorf("users -> FindByID: user data is nil")
 	}
 
+	startDate, ok := user.StartDate()
+	if !ok {
+		return nil, fmt.Errorf("users -> FindByID: startDate not ok")
+	}
+
+	startWorkTime, ok := user.StartWorkingTime()
+	if !ok {
+		return nil, fmt.Errorf("users -> FindByID: startWorkTime not ok")
+	}
+
+	endWorkTime, ok := user.EndWorkingTime()
+	if !ok {
+		return nil, fmt.Errorf("users -> FindByID: endWorkTime not ok")
+	}
+
 	return &entities.UserDataModel{
 		UserID:          user.Did,
 		CreatedAt:       user.CreatedAt,
@@ -102,8 +111,8 @@ func (repo *doctorRepository) FindByID(userID string) (*entities.UserDataModel, 
 		TelephoneNumber: user.TelephoneNumber,
 		Address:         user.Address,
 		LicenseNumber:   user.LicenseNumber,
-		StartDate:       user.StartDate,
-		StartWorkTime:   user.StartWorkingTime,
-		EndWorkTime:     user.EndWorkingTime,
+		StartDate:       startDate,
+		StartWorkTime:   startWorkTime,
+		EndWorkTime:     endWorkTime,
 	}, nil
 }

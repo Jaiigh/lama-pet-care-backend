@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/shopspring/decimal"
 )
 
 func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
@@ -40,9 +39,6 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	}
 	if role == "doctor" && bodyData.LicenseNumber == "" {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
-	}
-	if role == "caretaker" && !bodyData.Rating.Equal(decimal.NewFromInt(0)) {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "caretaker cannot have a rating when registering"})
 	}
 
 	hashPassword, err := utils.HashPassword(bodyData.Password)
@@ -91,6 +87,41 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 	}
 
 	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to generate token",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
+	})
+}
+
+func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
+	var validate = validator.New()
+	bodyData := entities.CreatedUserModel{}
+	if err := ctx.BodyParser(&bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+	if err := validate.Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
+	}
+
+	hashPassword, err := utils.HashPassword(bodyData.Password)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
+	}
+	bodyData.Password = hashPassword
+
+	userData, err := h.AuthService.Register("admin", bodyData)
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
+	}
+
+	token, err := middlewares.GenerateJWTToken(userData.UserID, "admin")
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to generate token",
