@@ -15,7 +15,7 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if err := h.AuthService.CheckToken(td); err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "User not found."})
+		return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "User not found."})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
@@ -32,7 +32,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	var validate = validator.New()
 	bodyData := entities.CreatedUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 	if err := validate.Struct(bodyData); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
@@ -49,7 +49,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 
 	userData, err := h.AuthService.Register(role, bodyData)
 	if err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
 	}
 
 	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
@@ -74,7 +74,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 
 	bodyData := entities.LoginUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
 	if bodyData.Email == "" || bodyData.Password == "" {
@@ -83,7 +83,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 
 	userData, err := h.AuthService.Login(role, bodyData)
 	if err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot login user: " + err.Error()})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "cannot login user: " + err.Error()})
 	}
 
 	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
@@ -104,7 +104,7 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 	var validate = validator.New()
 	bodyData := entities.CreatedUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 	if err := validate.Struct(bodyData); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
@@ -118,7 +118,7 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 
 	userData, err := h.AuthService.Register("admin", bodyData)
 	if err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
 	}
 
 	token, err := middlewares.GenerateJWTToken(userData.UserID, "admin")
