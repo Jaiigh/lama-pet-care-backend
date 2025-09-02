@@ -4,8 +4,8 @@ import (
 	"lama-backend/domain/entities"
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
-	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,9 +14,8 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
-
-	if _, err := h.UserService.GetByID(td.UserID); err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "User not found."})
+	if err := h.AuthService.CheckToken(td); err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "User not found."})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
@@ -25,17 +24,21 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 }
 
 func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
+	role := ctx.Query("role")
+	if role != "doctor" && role != "caretaker" && role != "owner" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	var validate = validator.New()
 	bodyData := entities.CreatedUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
-
-	if bodyData.Email == "" || bodyData.Password == "" {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	if err := validate.Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
 	}
-
-	if bodyData.Role == "" {
-		bodyData.Role = "user" // default role
+	if role == "doctor" && bodyData.LicenseNumber == "" {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
 	}
 
 	hashPassword, err := utils.HashPassword(bodyData.Password)
@@ -44,80 +47,90 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	}
 	bodyData.Password = hashPassword
 
-	userData, err := h.UserService.InsertNewUser(bodyData)
+	userData, err := h.AuthService.Register(role, bodyData)
 	if err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateJWTToken(userData.UserID, userData.Role)
+	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to generate token",
 		})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    *token.Token,
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(6 * time.Hour),
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
 	})
-
-	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{Message: "success"})
 }
 
 func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
-	bodyData := entities.CreatedUserModel{}
+	role := ctx.Query("role")
+	if role != "admin" && role != "doctor" && role != "caretaker" && role != "owner" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	bodyData := entities.LoginUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
 	if bodyData.Email == "" || bodyData.Password == "" {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
-	userData, err := h.UserService.Login(bodyData)
+	userData, err := h.AuthService.Login(role, bodyData)
 	if err != nil {
-		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "cannot login user: " + err.Error()})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "cannot login user: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateJWTToken(userData.UserID, userData.Role)
+	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to generate token",
 		})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    *token.Token,
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(6 * time.Hour),
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
 	})
-
-	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{Message: "success"})
 }
 
-func (h *HTTPGateway) Logout(ctx *fiber.Ctx) error {
-	_, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
-		return err
+func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
+	var validate = validator.New()
+	bodyData := entities.CreatedUserModel{}
+	if err := ctx.BodyParser(&bodyData); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+	if err := validate.Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    "",
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Strict",
-		Expires:  time.Now().Add(-1 * time.Hour),
-	})
+	hashPassword, err := utils.HashPassword(bodyData.Password)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
+	}
+	bodyData.Password = hashPassword
 
-	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
-		Message: "logout success",
+	userData, err := h.AuthService.Register("admin", bodyData)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
+	}
+
+	token, err := middlewares.GenerateJWTToken(userData.UserID, "admin")
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to generate token",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    token,
+		Status:  fiber.StatusOK,
 	})
 }
