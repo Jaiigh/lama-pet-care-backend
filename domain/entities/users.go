@@ -1,24 +1,47 @@
 package entities
 
 import (
+	"lama-backend/domain/prisma/db"
 	"time"
 )
 
 type UserDataModel struct {
-	UserID    string    `json:"user_id"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Password  string    `json:"password,omitempty"`
-	Role      string    `json:"role,omitempty"`
+	UserID          string     `json:"user_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	Email           string     `json:"email"`
+	Password        string     `json:"password"`
+	Name            string     `json:"name"`
+	BirthDate       time.Time  `json:"birth_date"`
+	TelephoneNumber string     `json:"telephone_number"`
+	Address         string     `json:"address"`
+	LicenseNumber   string     `json:"license_number,omitempty"`
+	StartDate       time.Time  `json:"start_date,omitempty"`
+	StartWorkTime   time.Time  `json:"start_work_time,omitempty"`
+	EndWorkTime     time.Time  `json:"end_work_time,omitempty"`
+	Specialization  string     `json:"specialization,omitempty"`
+	Rating          db.Decimal `json:"rating,omitempty"`
+	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
 type UserIDModel struct {
 	UserID string `json:"user_id"`
 }
 
-type CreatedUserModel struct {
+type LoginUserModel struct {
+	UserID   string `json:"user_id,omitempty"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role,omitempty"`
+	Role     string `json:"role"`
+}
+
+type CreatedUserModel struct {
+	Email           string    `json:"email" validate:"required,email"`
+	Password        string    `json:"password" validate:"required"`
+	Name            string    `json:"name" validate:"required"`
+	BirthDate       time.Time `json:"birth_date" validate:"required"`
+	TelephoneNumber string    `json:"telephone_number" validate:"required"`
+	Address         string    `json:"address" validate:"required"`
+	LicenseNumber   string    `json:"license_number,omitempty"`
+	Specialization  string    `json:"specialization,omitempty"`
 }
