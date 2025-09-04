@@ -7,30 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Admin {
   AID              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at       DateTime @default(now()) @db.Timestamptz(6)
   updated_at       DateTime @updatedAt @db.Timestamptz(6)
-  email            String   @unique @default("")
-  password         String   @default("")
-  name             String   @default("")
+  email            String   @unique
+  password         String
+  name             String
   birthdate        DateTime @db.Date
-  telephone_number String   @unique @default("") @db.VarChar(10)
-  address          String   @default("")
+  telephone_number String   @unique @db.VarChar(10)
+  address          String
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Caretaker {
   CID                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at         DateTime   @default(now()) @db.Timestamptz(6)
   updated_at         DateTime   @updatedAt @db.Timestamptz(6)
-  email              String     @unique @default("")
-  password           String     @default("")
+  email              String     @unique
+  password           String
   name               String
   birthdate          DateTime   @db.Date
-  telephone_number   String     @unique @default("") @db.VarChar(10)
-  address            String     @default("")
+  telephone_number   String     @unique @db.VarChar(10)
+  address            String
   specialties        String?
   start_working_time DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
   end_working_time   DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
@@ -38,8 +36,6 @@ model Caretaker {
   Cservice           Cservice[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Cservice {
   date      DateTime  @db.Date
   score     Int
@@ -50,25 +46,23 @@ model Cservice {
   Service   Service   @relation(fields: [SID], references: [SID], onDelete: Cascade)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Doctor {
   DID                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at         DateTime   @default(now()) @db.Timestamptz(6)
   updated_at         DateTime   @updatedAt @db.Timestamptz(6)
-  email              String     @unique @default("")
-  password           String     @default("")
-  name               String     @default("")
+  email              String     @unique
+  password           String
+  name               String
   birthdate          DateTime   @db.Date
-  telephone_number   String     @unique @default("") @db.VarChar(10)
-  address            String     @default("")
-  license_number     String     @unique @default("")
+  telephone_number   String     @unique @db.VarChar(10)
+  address            String
+  license_number     String     @unique
   start_date         DateTime   @default(dbgenerated("'0001-01-01'::date")) @db.Date
   start_working_time DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
   end_working_time   DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
   Mservice           Mservice[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Medicine {
   mediname String
   SID      String  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -77,7 +71,6 @@ model Medicine {
   @@id([mediname, SID])
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Mservice {
   appoint_time DateTime @db.Timestamp(6)
   disease      String
@@ -87,24 +80,22 @@ model Mservice {
   Service      Service  @relation(fields: [SID], references: [SID], onDelete: Cascade)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Owner {
   OID              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime  @updatedAt @db.Timestamptz(6)
-  email            String    @unique @default("")
-  password         String    @default("")
-  name             String    @default("")
+  email            String    @unique
+  password         String
+  name             String
   birthdate        DateTime  @db.Date
-  telephone_number String    @unique @default("") @db.VarChar(10)
-  address          String    @default("")
+  telephone_number String    @unique @db.VarChar(10)
+  address          String
   total_spending   Decimal?  @db.Decimal(12, 2)
   Payment          Payment[]
   Pet              Pet[]
   Service          Service[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Payment {
   type     String?
   status   payment_status
@@ -115,8 +106,6 @@ model Payment {
   Service  Service[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Pet {
   breed     String?
   name      String?
@@ -130,8 +119,6 @@ model Pet {
   Service   Service[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Service {
   price    Int
   status   service_status

@@ -85,21 +85,6 @@ func (repo *doctorRepository) FindByID(userID string) (*entities.UserDataModel, 
 		return nil, fmt.Errorf("users -> FindByID: user data is nil")
 	}
 
-	startDate, ok := user.StartDate()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: startDate not ok")
-	}
-
-	startWorkTime, ok := user.StartWorkingTime()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: startWorkTime not ok")
-	}
-
-	endWorkTime, ok := user.EndWorkingTime()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: endWorkTime not ok")
-	}
-
 	return &entities.UserDataModel{
 		UserID:          user.Did,
 		CreatedAt:       user.CreatedAt,
@@ -111,8 +96,8 @@ func (repo *doctorRepository) FindByID(userID string) (*entities.UserDataModel, 
 		TelephoneNumber: user.TelephoneNumber,
 		Address:         user.Address,
 		LicenseNumber:   user.LicenseNumber,
-		StartDate:       startDate,
-		StartWorkTime:   startWorkTime,
-		EndWorkTime:     endWorkTime,
+		StartDate:       user.StartDate,
+		StartWorkTime:   user.StartWorkingTime,
+		EndWorkTime:     user.EndWorkingTime,
 	}, nil
 }
