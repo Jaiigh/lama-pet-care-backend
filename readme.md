@@ -9,7 +9,6 @@ JWT_REFESH_SECRET_KEY=Test
 ```
 # Install dependencies
 ```
-go mod init lama-backend
 go get github.com/steebchen/prisma-client-go
 go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/schema.prisma dev
 go mod tidy
