@@ -8,7 +8,7 @@ import (
 
 type HTTPGateway struct {
 	AuthService  service.IAuthService
-	OwnerService *service.OwnerService // Add OwnerService for owner operations
+	OwnerService *service.OwnerService
 }
 
 func NewHTTPGateway(app *fiber.App, auth service.IAuthService, owner *service.OwnerService) {
@@ -18,15 +18,4 @@ func NewHTTPGateway(app *fiber.App, auth service.IAuthService, owner *service.Ow
 	}
 
 	GatewayUsers(*gateway, app)
-}
-
-// Handler for GET /owner/:id
-func (g *HTTPGateway) GetOwnerByID(c *fiber.Ctx) error {
-	id := c.Params("id")
-	// You may want to validate id here
-	owner, err := g.OwnerService.GetOwnerByID(id)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.JSON(owner)
 }
