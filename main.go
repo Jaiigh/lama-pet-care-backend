@@ -40,8 +40,9 @@ func main() {
 	doctorRepo := repo.NewDoctorRepository(prismadb)
 
 	svAuth := sv.NewAuthService(adminRepo, ownerRepo, caretakerRepo, doctorRepo)
+	ownerService := sv.NewOwnerService(ownerRepo)
 
-	gw.NewHTTPGateway(app, svAuth)
+	gw.NewHTTPGateway(app, svAuth, ownerService)
 
 	PORT := os.Getenv("PORT")
 

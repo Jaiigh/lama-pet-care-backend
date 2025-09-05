@@ -14,6 +14,9 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	// user.Put("/update", gateway.UpdateUser)
 	// user.Delete("/delete", gateway.DeleteUser)
 
+	owner := app.Group("/owner")
+	owner.Get("/:id", gateway.GetOwnerByID) // Handler to be implemented in HTTPGateway
+
 	auth := app.Group("/auth")
 	// check to login with token if not pass go to login with password
 	auth.Get("/check_token", middlewares.SetJWtHeaderHandler(), gateway.checkToken)
