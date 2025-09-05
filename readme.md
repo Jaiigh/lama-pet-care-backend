@@ -18,6 +18,10 @@ go mod tidy
 ```
 go run .
 ```
+or
+```
+air
+```
 # Run this command whenever the Prisma schema changes to regenerate the database client:
 ```
 go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/schema.prisma dev
