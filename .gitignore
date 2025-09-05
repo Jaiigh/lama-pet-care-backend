@@ -1,5 +1,4 @@
 /tmp/*
 .vscode
 .env
-go.mod
 go.sum
