@@ -22,5 +22,5 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	auth.Post("/create_admin", gateway.CreateAdmin)
 
 	owner := app.Group("/owner")
-	owner.Get("/:id", gateway.GetOwnerByID)
+	owner.Get("/:id", gateway.FindOwnerByID)
 }

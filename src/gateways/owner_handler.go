@@ -4,8 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetOwnerByID handles GET /owner/:id requests
-func (h *HTTPGateway) GetOwnerByID(ctx *fiber.Ctx) error {
+// FindOwnerByID handles GET /owner/:id requests
+func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -13,7 +13,7 @@ func (h *HTTPGateway) GetOwnerByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := h.OwnerService.GetOwnerByID(id)
+	user, err := h.OwnerService.FindOwnerByID(id)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error":  "user not found",
