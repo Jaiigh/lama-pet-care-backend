@@ -17,3 +17,8 @@ func (s *OwnerService) FindOwnerByID(id string) (*entities.UserDataModel, error)
 	// You may want to add validation or logging here
 	return s.Repo.FindByID(id)
 }
+
+func (s *OwnerService) DeleteOwnerByID(id string) (*entities.UserDataModel, error) {
+	// You could add validation, logging, or pre-checks here
+	return s.Repo.DeleteByID(id)
+}

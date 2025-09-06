@@ -23,4 +23,6 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	owner := app.Group("/owner")
 	owner.Get("/:id", gateway.FindOwnerByID)
+	owner.Put("/:id", gateway.UpdateOwnerByID)
+	owner.Delete("/:id", gateway.DeleteOwnerByID)
 }

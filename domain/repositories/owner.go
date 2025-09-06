@@ -18,6 +18,8 @@ type IOwnerRepository interface {
 	InsertOwner(data entities.CreatedUserModel) (*entities.UserDataModel, error)
 	FindByEmail(email string) (*entities.LoginUserModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
+	// UpdateByID(userID string, data entities.UpdatedUserModel) (*entities.UserDataModel, error)
+	DeleteByID(userID string) (*entities.UserDataModel, error)
 }
 
 func NewOwnerRepository(db *ds.PrismaDB) IOwnerRepository {
@@ -93,5 +95,30 @@ func (repo *ownerRepository) FindByID(userID string) (*entities.UserDataModel, e
 		BirthDate:       user.Birthdate,
 		TelephoneNumber: user.TelephoneNumber,
 		Address:         user.Address,
+	}, nil
+}
+
+func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel, error) {
+	deletedUser, err := repo.Collection.Owner.FindUnique(
+		db.Owner.Oid.Equals(userID),
+	).Delete().Exec(repo.Context) // ลบและคืนค่าที่ถูกลบเลย
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> DeleteByID: %v", err)
+	}
+	if deletedUser == nil {
+		return nil, fmt.Errorf("users -> DeleteByID: user not found")
+	}
+
+	return &entities.UserDataModel{
+		UserID:          deletedUser.Oid,
+		CreatedAt:       deletedUser.CreatedAt,
+		UpdatedAt:       deletedUser.UpdatedAt,
+		Email:           deletedUser.Email,
+		Password:        deletedUser.Password,
+		Name:            deletedUser.Name,
+		BirthDate:       deletedUser.Birthdate,
+		TelephoneNumber: deletedUser.TelephoneNumber,
+		Address:         deletedUser.Address,
 	}, nil
 }
