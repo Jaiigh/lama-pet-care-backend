@@ -5,7 +5,7 @@ import (
 	"lama-backend/domain/entities"
 )
 
-func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
+func (h *HTTPGateway) FindAdminByID(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -13,7 +13,7 @@ func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := h.OwnerService.FindOwnerByID(id)
+	user, err := h.AdminService.FindAdminByID(id)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error":  "user not found",
@@ -27,15 +27,15 @@ func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
+func (h *HTTPGateway) DeleteAdminByID(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing owner ID",
+			"error": "missing admin ID",
 		})
 	}
 
-	deletedUser, err := h.OwnerService.DeleteOwnerByID(id)
+	deletedUser, err := h.AdminService.DeleteAdminByID(id)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "user not found",
@@ -43,12 +43,12 @@ func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "owner deleted successfully",
+		"message": "admin deleted successfully",
 		"data":    deletedUser,
 	})
 }
 
-func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
+func (h *HTTPGateway) UpdateAdminByID(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -63,7 +63,7 @@ func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := h.OwnerService.UpdateOwnerByID(id, updateData)
+	updatedUser, err := h.AdminService.UpdateAdminByID(id, updateData)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

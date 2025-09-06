@@ -47,12 +47,17 @@ type CreatedUserModel struct {
 }
 
 type UpdateUserModel struct {
-	Email           *string    `json:"email,omitempty"`
-	Password        *string    `json:"password,omitempty"`
-	Name            *string    `json:"name,omitempty"`
-	BirthDate       *time.Time `json:"birth_date,omitempty"`
-	TelephoneNumber *string    `json:"telephone_number,omitempty"`
-	Address         *string    `json:"address,omitempty"`
-	LicenseNumber   *string    `json:"license_number,omitempty"` // For doctors only
-	Specialization  *string    `json:"specialization,omitempty"` // For caretaker only
+	Email           *string     `json:"email,omitempty"`
+	Password        *string     `json:"password,omitempty"`
+	Name            *string     `json:"name,omitempty"`
+	BirthDate       *time.Time  `json:"birth_date,omitempty"`
+	TelephoneNumber *string     `json:"telephone_number,omitempty"`
+	Address         *string     `json:"address,omitempty"`
+	LicenseNumber   *string     `json:"license_number,omitempty"`  // doctor only
+	StartDate       time.Time   `json:"start_date,omitempty"`      // doctor only
+	StartWorkTime   *time.Time  `json:"start_work_time,omitempty"` // doctor/caretaker only
+	EndWorkTime     *time.Time  `json:"end_work_time,omitempty"`   // doctor/caretaker only
+	Specialization  *string     `json:"specialization,omitempty"`  // caretaker only
+	Rating          *db.Decimal `json:"rating,omitempty"`          // caretaker only
+	TotalSpending   *db.Decimal `json:"total_spending,omitempty"`  // owner only
 }
