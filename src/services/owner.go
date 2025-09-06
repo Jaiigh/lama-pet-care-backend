@@ -9,6 +9,12 @@ type OwnerService struct {
 	Repo repositories.IOwnerRepository
 }
 
+type IOwnerService interface {
+	FindOwnerByID(id string) (*entities.UserDataModel, error)
+	DeleteOwnerByID(id string) (*entities.UserDataModel, error)
+	UpdateOwnerByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
+}
+
 func NewOwnerService(repo repositories.IOwnerRepository) *OwnerService {
 	return &OwnerService{Repo: repo}
 }
