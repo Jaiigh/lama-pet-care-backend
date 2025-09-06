@@ -2,6 +2,7 @@ package gateways
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"lama-backend/domain/entities"
 )
 
 // FindOwnerByID handles GET /owner/:id requests
@@ -27,13 +28,6 @@ func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
-	// Implementation for updating owner by ID
-	return ctx.Status(fiber.StatusNotImplemented).JSON(fiber.Map{
-		"error": "UpdateOwnerByID not implemented yet",
-	})
-}
-
 func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 	if id == "" {
@@ -53,4 +47,29 @@ func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
 		"message": "owner deleted successfully",
 		"data":    deletedUser,
 	})
+}
+
+func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	if id == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing id parameter",
+		})
+	}
+
+	var updateData entities.UpdateUserModel
+	if err := ctx.BodyParser(&updateData); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid request body",
+		})
+	}
+
+	updatedUser, err := h.OwnerService.UpdateOwnerByID(id, updateData)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(updatedUser)
 }

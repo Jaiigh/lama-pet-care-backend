@@ -45,3 +45,14 @@ type CreatedUserModel struct {
 	LicenseNumber   string    `json:"license_number,omitempty"`
 	Specialization  string    `json:"specialization,omitempty"`
 }
+
+type UpdateUserModel struct {
+	Email           *string    `json:"email,omitempty"`
+	Password        *string    `json:"password,omitempty"`
+	Name            *string    `json:"name,omitempty"`
+	BirthDate       *time.Time `json:"birth_date,omitempty"`
+	TelephoneNumber *string    `json:"telephone_number,omitempty"`
+	Address         *string    `json:"address,omitempty"`
+	LicenseNumber   *string    `json:"license_number,omitempty"` // For doctors only
+	Specialization  *string    `json:"specialization,omitempty"` // For caretaker only
+}

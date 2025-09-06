@@ -22,3 +22,8 @@ func (s *OwnerService) DeleteOwnerByID(id string) (*entities.UserDataModel, erro
 	// You could add validation, logging, or pre-checks here
 	return s.Repo.DeleteByID(id)
 }
+
+func (s *OwnerService) UpdateOwnerByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error) {
+	// You could add validation, logging, or pre-checks here
+	return s.Repo.UpdateByID(id, data)
+}
