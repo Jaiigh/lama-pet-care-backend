@@ -15,7 +15,7 @@ type IOwnerService interface {
 	UpdateOwnerByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
 
-func NewOwnerService(repo repositories.IOwnerRepository) *OwnerService {
+func NewOwnerService(repo repositories.IOwnerRepository) IOwnerService {
 	return &OwnerService{Repo: repo}
 }
 

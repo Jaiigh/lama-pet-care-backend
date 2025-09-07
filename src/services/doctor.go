@@ -15,7 +15,7 @@ type IDoctorService interface {
 	UpdateDoctorByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
 
-func NewDoctorService(repo repositories.IDoctorRepository) *DoctorService {
+func NewDoctorService(repo repositories.IDoctorRepository) IDoctorService {
 	return &DoctorService{Repo: repo}
 }
 
