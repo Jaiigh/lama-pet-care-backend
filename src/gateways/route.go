@@ -20,4 +20,24 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	auth.Post("/register", gateway.Register)
 	auth.Post("/login", gateway.Login)
 	auth.Post("/create_admin", gateway.CreateAdmin)
+
+	owner := app.Group("/owner")
+	owner.Get("/:id", gateway.FindOwnerByID)
+	owner.Patch("/:id", gateway.UpdateOwnerByID)
+	owner.Delete("/:id", gateway.DeleteOwnerByID)
+
+	admin := app.Group("/admin")
+	admin.Get("/:id", gateway.FindAdminByID)
+	admin.Patch("/:id", gateway.UpdateAdminByID)
+	admin.Delete("/:id", gateway.DeleteAdminByID)
+
+	doctor := app.Group("/doctor")
+	doctor.Get("/:id", gateway.FindDoctorByID)
+	doctor.Patch("/:id", gateway.UpdateDoctorByID)
+	doctor.Delete("/:id", gateway.DeleteDoctorByID)
+
+	caretaker := app.Group("/caretaker")
+	caretaker.Get("/:id", gateway.FindCaretakerByID)
+	caretaker.Patch("/:id", gateway.UpdateCaretakerByID)
+	caretaker.Delete("/:id", gateway.DeleteCaretakerByID)
 }
