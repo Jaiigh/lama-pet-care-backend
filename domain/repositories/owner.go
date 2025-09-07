@@ -124,7 +124,6 @@ func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel,
 }
 
 func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error) {
-	// Start with an empty list of updates
 	updates := []db.OwnerSetParam{}
 
 	if data.Email != nil {
@@ -145,12 +144,14 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 	if data.Address != nil {
 		updates = append(updates, db.Owner.Address.Set(*data.Address))
 	}
+	if data.TotalSpending != nil {
+		updates = append(updates, db.Owner.TotalSpending.Set(*data.TotalSpending))
+	}
 
 	if len(updates) == 0 {
 		return nil, fmt.Errorf("users -> UpdateByID: no fields to update")
 	}
 
-	// Execute update
 	updatedUser, err := repo.Collection.Owner.FindUnique(
 		db.Owner.Oid.Equals(userID),
 	).Update(updates...).Exec(repo.Context)
@@ -160,6 +161,11 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 	}
 	if updatedUser == nil {
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
+	}
+
+	totalSpending, ok := updatedUser.TotalSpending()
+	if !ok {
+		totalSpending = db.Decimal{}
 	}
 
 	return &entities.UserDataModel{
@@ -172,5 +178,6 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 		BirthDate:       updatedUser.Birthdate,
 		TelephoneNumber: updatedUser.TelephoneNumber,
 		Address:         updatedUser.Address,
+		TotalSpending:   totalSpending,
 	}, nil
 }
