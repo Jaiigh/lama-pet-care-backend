@@ -7,16 +7,20 @@ import (
 )
 
 type HTTPGateway struct {
-	AuthService  service.IAuthService
-	OwnerService *service.OwnerService
-	AdminService *service.AdminService
+	AuthService   service.IAuthService
+	OwnerService  *service.OwnerService
+	AdminService  *service.AdminService
+	DoctorService *service.DoctorService
 }
 
-func NewHTTPGateway(app *fiber.App, auth service.IAuthService, owner *service.OwnerService, admin *service.AdminService) {
+func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
+	owner *service.OwnerService, admin *service.AdminService,
+	doctor *service.DoctorService) {
 	gateway := &HTTPGateway{
-		AuthService:  auth,
-		OwnerService: owner,
-		AdminService: admin,
+		AuthService:   auth,
+		OwnerService:  owner,
+		AdminService:  admin,
+		DoctorService: doctor,
 	}
 
 	GatewayUsers(*gateway, app)

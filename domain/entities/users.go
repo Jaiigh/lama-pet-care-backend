@@ -54,7 +54,7 @@ type UpdateUserModel struct {
 	TelephoneNumber *string     `json:"telephone_number,omitempty"`
 	Address         *string     `json:"address,omitempty"`
 	LicenseNumber   *string     `json:"license_number,omitempty"`  // doctor only
-	StartDate       time.Time   `json:"start_date,omitempty"`      // doctor only
+	StartDate       *time.Time  `json:"start_date,omitempty"`      // doctor only
 	StartWorkTime   *time.Time  `json:"start_work_time,omitempty"` // doctor/caretaker only
 	EndWorkTime     *time.Time  `json:"end_work_time,omitempty"`   // doctor/caretaker only
 	Specialization  *string     `json:"specialization,omitempty"`  // caretaker only
