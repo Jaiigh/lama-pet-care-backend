@@ -15,7 +15,7 @@ type ICaretakerService interface {
 	UpdateCaretakerByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
 
-func NewCaretakerService(repo repositories.ICaretakerRepository) *CaretakerService {
+func NewCaretakerService(repo repositories.ICaretakerRepository) ICaretakerService {
 	return &CaretakerService{Repo: repo}
 }
 

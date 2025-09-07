@@ -15,7 +15,7 @@ type IAdminService interface {
 	UpdateAdminByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
 
-func NewAdminService(repo repositories.IAdminRepository) *AdminService {
+func NewAdminService(repo repositories.IAdminRepository) IAdminService {
 	return &AdminService{Repo: repo}
 }
 
