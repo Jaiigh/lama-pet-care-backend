@@ -36,8 +36,8 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	doctor.Patch("/:id", gateway.UpdateDoctorByID)
 	doctor.Delete("/:id", gateway.DeleteDoctorByID)
 
-	// caretaker := app.Group("/caretaker")
-	// caretaker.Get("/:id", gateway.FindCaretakerByID)
-	// caretaker.Patch("/:id", gateway.UpdateCaretakerByID)
-	// caretaker.Delete("/:id", gateway.DeleteCaretakerByID)
+	caretaker := app.Group("/caretaker")
+	caretaker.Get("/:id", gateway.FindCaretakerByID)
+	caretaker.Patch("/:id", gateway.UpdateCaretakerByID)
+	caretaker.Delete("/:id", gateway.DeleteCaretakerByID)
 }

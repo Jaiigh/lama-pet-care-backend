@@ -43,8 +43,9 @@ func main() {
 	ownerService := sv.NewOwnerService(ownerRepo)
 	adminService := sv.NewAdminService(adminRepo)
 	doctorService := sv.NewDoctorService(doctorRepo)
+	caretakerService := sv.NewCaretakerService(caretakerRepo)
 
-	gw.NewHTTPGateway(app, svAuth, ownerService, adminService, doctorService)
+	gw.NewHTTPGateway(app, svAuth, ownerService, adminService, doctorService, caretakerService)
 
 	PORT := os.Getenv("PORT")
 
