@@ -7,23 +7,14 @@ import (
 	gw "lama-backend/src/gateways"
 	"lama-backend/src/middlewares"
 	sv "lama-backend/src/services"
-	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-
-	// // // remove this before deploy ###################
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	// /// ############################################
 
 	app := fiber.New(configuration.NewFiberConfiguration())
 	middlewares.Logger(app)
