@@ -13,6 +13,15 @@ go get github.com/steebchen/prisma-client-go
 go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/schema.prisma dev
 go mod tidy
 ```
+add this in top of func main
+```
+// // // remove this before deploy ###################
+err := godotenv.Load()
+if err != nil {
+	log.Fatal("Error loading .env file")
+}
+// /// ############################################
+```
 # Run development server
 ```
 go run .
