@@ -1,19 +1,19 @@
 package gateways
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"lama-backend/domain/entities"
+	"lama-backend/src/middlewares"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	if id == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "id parameter is required",
-		})
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil {
+		return err
 	}
 
-	user, err := h.OwnerService.FindOwnerByID(id)
+	user, err := h.OwnerService.FindOwnerByID(token.UserID)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error":  "user not found",
@@ -28,14 +28,12 @@ func (h *HTTPGateway) FindOwnerByID(ctx *fiber.Ctx) error {
 }
 
 func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	if id == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing owner ID",
-		})
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil {
+		return err
 	}
 
-	deletedUser, err := h.OwnerService.DeleteOwnerByID(id)
+	deletedUser, err := h.OwnerService.DeleteOwnerByID(token.UserID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "user not found",
@@ -49,11 +47,9 @@ func (h *HTTPGateway) DeleteOwnerByID(ctx *fiber.Ctx) error {
 }
 
 func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	if id == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing id parameter",
-		})
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil {
+		return err
 	}
 
 	var updateData entities.UpdateUserModel
@@ -63,7 +59,7 @@ func (h *HTTPGateway) UpdateOwnerByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := h.OwnerService.UpdateOwnerByID(id, updateData)
+	updatedUser, err := h.OwnerService.UpdateOwnerByID(token.UserID, updateData)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
