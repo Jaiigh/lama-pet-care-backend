@@ -1,11 +1,16 @@
 # lama-backend
 # Set Environment `.env`
 ```
-DATABASE_URL= <database in prismadb>
+DATABASE_URL=<direct_connect>
+PRISMA_DISABLE_PREPARED_STATEMENTS=true
 PORT=8080
 
 JWT_SECRET_KEY=Test
 JWT_REFESH_SECRET_KEY=Test
+```
+Whenever deploy change DATABASE_URL in .env to transaction_pooler
+```
+DATABASE_URL="<transaction_pooler>?pgbouncer=true&connect_timeout=10"
 ```
 # Install dependencies
 ```
