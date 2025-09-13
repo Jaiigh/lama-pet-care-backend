@@ -1,7 +1,8 @@
 # lama-backend
 # Set Environment `.env`
 ```
-DATABASE_URL= <database in prismadb>
+DATABASE_URL="<transaction_pooler>?pgbouncer=true&connect_timeout=10"
+PRISMA_DISABLE_PREPARED_STATEMENTS=true
 PORT=8080
 
 JWT_SECRET_KEY=Test
