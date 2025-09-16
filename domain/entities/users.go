@@ -40,10 +40,10 @@ type CreatedUserModel struct {
 	Password        string    `json:"password" validate:"required"`
 	Name            string    `json:"name" validate:"required"`
 	BirthDate       time.Time `json:"birth_date" validate:"required"`
-	TelephoneNumber string    `json:"telephone_number" validate:"required"`
+	TelephoneNumber string    `json:"telephone_number" validate:"required,len=10,numeric"`
 	Address         string    `json:"address" validate:"required"`
-	LicenseNumber   string    `json:"license_number,omitempty"`
-	Specialization  string    `json:"specialization,omitempty"`
+	LicenseNumber   string    `json:"license_number,omitempty"` // doctor only
+	Specialization  string    `json:"specialization,omitempty"` // caretaker only
 }
 
 type UpdateUserModel struct {
