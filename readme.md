@@ -35,4 +35,8 @@ update swagger
 ```
 swag init
 ```
+swagger url
+```
+https://lama-pet-care-backend-qbwz.onrender.com/swagger/index.html
+```
 In the response message, if the output is not just a single string, you have to use response entities instead of fiber.Map; otherwise, Swagger may not fully reflect the real API, and we might lose some credit.
