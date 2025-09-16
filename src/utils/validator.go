@@ -12,6 +12,10 @@ func FormatValidationError(err error) string {
 			return field + " is required"
 		case "email":
 			return field + " must be a valid email"
+		case "len":
+			return field + " must be " + fe.Param() + " characters long"
+		case "numeric":
+			return field + " must be numeric"
 		default:
 			return field + " failed validation: " + tag
 		}
