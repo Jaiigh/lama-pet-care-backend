@@ -22,8 +22,9 @@ import (
 // @title LAMA Backend API
 // @version 1.0
 // @description this is a backend REST API server for LAMA project
-// @host localhost:8080
+// @host lama-pet-care-backend-qbwz.onrender.com
 // @BasePath /
+// @Schemes https
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
