@@ -21,23 +21,8 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	auth.Post("/login", gateway.Login)
 	auth.Post("/create_admin", gateway.CreateAdmin)
 
-	owner := app.Group("/owner")
-	owner.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindOwnerByID)
-	owner.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateOwnerByID)
-	owner.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteOwnerByID)
-
-	admin := app.Group("/admin")
-	admin.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindAdminByID)
-	admin.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateAdminByID)
-	admin.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteAdminByID)
-
-	doctor := app.Group("/doctor")
-	doctor.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindDoctorByID)
-	doctor.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateDoctorByID)
-	doctor.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteDoctorByID)
-
-	caretaker := app.Group("/caretaker")
-	caretaker.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindCaretakerByID)
-	caretaker.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateCaretakerByID)
-	caretaker.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteCaretakerByID)
+	user := app.Group("/user")
+	user.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindUserByID)
+	user.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateUserByID)
+	user.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteUserByID)
 }
