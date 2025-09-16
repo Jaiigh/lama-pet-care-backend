@@ -6,7 +6,6 @@ import (
 	"lama-backend/domain/repositories"
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
-	"net/mail"
 	"time"
 )
 
@@ -55,12 +54,6 @@ func (sv *authService) CheckToken(td *middlewares.TokenDetails) error {
 }
 
 func (sv *authService) Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error) {
-	// Validate email format
-	var err error
-	if _, err = mail.ParseAddress(data.Email); err != nil {
-		return nil, err
-	}
-
 	now := time.Now()
 	eighteenYearsLater := data.BirthDate.AddDate(18, 0, 0)
 	if now.Before(eighteenYearsLater) {
@@ -72,6 +65,7 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 	}
 
 	var userData *entities.UserDataModel
+	var err error
 	switch role {
 	case "admin":
 		userData, err = sv.AdminRepository.InsertAdmin(data)
@@ -100,12 +94,8 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 }
 
 func (sv *authService) Login(role string, data entities.LoginUserModel) (*entities.LoginUserModel, error) {
-	// Validate email format
-	var err error
-	if _, err = mail.ParseAddress(data.Email); err != nil {
-		return nil, err
-	}
 	var userData *entities.LoginUserModel
+	var err error
 	switch role {
 	case "admin":
 		userData, err = sv.AdminRepository.FindByEmail(data.Email)

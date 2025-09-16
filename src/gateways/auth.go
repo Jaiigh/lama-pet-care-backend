@@ -35,7 +35,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 	if err := validate.Struct(bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 	if role == "doctor" && bodyData.LicenseNumber == "" {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
@@ -72,13 +72,13 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
+	var validate = validator.New()
 	bodyData := entities.LoginUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
-
-	if bodyData.Email == "" || bodyData.Password == "" {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	if err := validate.Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
 	userData, err := h.AuthService.Login(role, bodyData)
@@ -107,7 +107,7 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 	if err := validate.Struct(bodyData); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "invalid json body: validation failed"})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
 	hashPassword, err := utils.HashPassword(bodyData.Password)
