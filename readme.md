@@ -30,3 +30,9 @@ go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/s
 ```
 go mod tidy
 ```
+# Swagger
+update swagger
+```
+swag init
+```
+In the response message, if the output is not just a single string, you have to use response entities instead of fiber.Map; otherwise, Swagger may not fully reflect the real API, and we might lose some credit.

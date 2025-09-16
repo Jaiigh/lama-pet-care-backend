@@ -10,12 +10,24 @@ import (
 	"log"
 	"os"
 
+	_ "lama-backend/docs"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 )
 
+// @title LAMA Backend API
+// @version 1.0
+// @description this is a backend REST API server for LAMA project
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and then your JWT token.
 func main() {
 
 	// // // remove this before deploy ###################
@@ -46,6 +58,8 @@ func main() {
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
 
 	gw.NewHTTPGateway(app, svAuth, ownerService, adminService, doctorService, caretakerService)
+
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	PORT := os.Getenv("PORT")
 
