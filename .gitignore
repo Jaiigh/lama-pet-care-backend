@@ -2,3 +2,6 @@
 .vscode
 .env
 go.sum
+
+/docs/swagger.json
+/docs/swagger.yaml
