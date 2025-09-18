@@ -6,7 +6,6 @@ import (
 	"lama-backend/domain/repositories"
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
-	"time"
 )
 
 type authService struct {
@@ -54,16 +53,6 @@ func (sv *authService) CheckToken(td *middlewares.TokenDetails) error {
 }
 
 func (sv *authService) Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error) {
-	now := time.Now()
-	eighteenYearsLater := data.BirthDate.AddDate(18, 0, 0)
-	if now.Before(eighteenYearsLater) {
-		return nil, fmt.Errorf("you must be at least 18 years old to register")
-	}
-
-	if len(data.TelephoneNumber) != 10 {
-		return nil, fmt.Errorf("telephone number must be 10 digits")
-	}
-
 	var userData *entities.UserDataModel
 	var err error
 	switch role {

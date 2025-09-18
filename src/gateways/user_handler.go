@@ -7,10 +7,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// @Summary find user by id
+// @Description find user by id and role from JWT token
+// @Tags user
+// @Produce json
+// @Param Authorization header string true "Bearer <JWT token>"
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 401 {object} string "Unauthorization Token."
+// @Failure 403 {object} string "Invalid role"
+// @Failure 404 {object} string "User not found."
+// @Router /user/ [get]
+// @Security BearerAuth
 func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil {
-		return err
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
 	var user *entities.UserDataModel
@@ -31,21 +42,32 @@ func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":  "user not found",
-			"detail": err.Error(),
+			"error": "user not found - details: " + err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"data":    user,
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "user found",
+		Data:    user,
+		Status:  fiber.StatusOK,
 	})
 }
 
+// @Summary delete user by id
+// @Description delete user by id and role from JWT token
+// @Tags user
+// @Produce json
+// @Param Authorization header string true "Bearer <JWT token>"
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 401 {object} string "Unauthorization Token."
+// @Failure 403 {object} string "Invalid role"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /user/ [delete]
+// @Security BearerAuth
 func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil {
-		return err
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
 	var deletedUser *entities.UserDataModel
@@ -70,16 +92,30 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "caretaker deleted successfully",
-		"data":    deletedUser,
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "user deleted successfully",
+		Data:    deletedUser,
+		Status:  fiber.StatusOK,
 	})
 }
 
+// @Summary delete user by id
+// @Description delete user by id and role from JWT token
+// @Tags user
+// @Produce json
+// @Param Authorization header string true "Bearer <JWT token>"
+// @Param body body entities.UpdateUserModel true "update user data"
+// @Success 200 {object} entities.UserDataModel "Request successful"
+// @Failure 400 {object} string "Invalid json body"
+// @Failure 401 {object} string "Unauthorization Token."
+// @Failure 403 {object} string "Invalid role"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /user/ [patch]
+// @Security BearerAuth
 func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil {
-		return err
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
 	var updateData entities.UpdateUserModel
