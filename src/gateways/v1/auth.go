@@ -49,7 +49,7 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/register/:role [post]
+// @Router /auth/register/{role} [post]
 func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	role := ctx.Params("role")
 	if role != "doctor" && role != "caretaker" && role != "owner" {
@@ -109,7 +109,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 401 {object} entities.ResponseMessage "Cannot login user: invalid password or email"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/login/:role [post]
+// @Router /auth/login/{role} [post]
 func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 	role := ctx.Params("role")
 	if role != "admin" && role != "doctor" && role != "caretaker" && role != "owner" {
