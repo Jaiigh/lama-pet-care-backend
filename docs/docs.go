@@ -113,7 +113,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/auth/login/:role": {
             "post": {
                 "description": "Login user",
                 "consumes": [
@@ -131,7 +131,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Role of the user",
                         "name": "role",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -184,7 +184,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/auth/register/:role": {
             "post": {
                 "description": "Register new user except admin",
                 "consumes": [
@@ -202,7 +202,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Role of the user except admin",
                         "name": "role",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {

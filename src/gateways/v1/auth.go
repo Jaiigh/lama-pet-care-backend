@@ -42,16 +42,16 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param role query string true "Role of the user except admin"
+// @Param role path string true "Role of the user except admin"
 // @Param body body entities.CreatedUserModel true "User data"
 // @Success 200 {object} entities.ResponseModel "Request successful"
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/register [post]
+// @Router /auth/register/:role [post]
 func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
-	role := ctx.Query("role")
+	role := ctx.Params("role")
 	if role != "doctor" && role != "caretaker" && role != "owner" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
@@ -101,7 +101,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param role query string true "Role of the user"
+// @Param role path string true "Role of the user"
 // @Param body body entities.LoginUserRequestModel true "email and password"
 // @Success 200 {object} entities.ResponseModel "Request successful"
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
@@ -109,9 +109,9 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 401 {object} entities.ResponseMessage "Cannot login user: invalid password or email"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/login [post]
+// @Router /auth/login/:role [post]
 func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
-	role := ctx.Query("role")
+	role := ctx.Params("role")
 	if role != "admin" && role != "doctor" && role != "caretaker" && role != "owner" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
