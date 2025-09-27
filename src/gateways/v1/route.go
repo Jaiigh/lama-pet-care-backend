@@ -12,10 +12,10 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	auth := api.Group("/auth")
 	// check to login with token if not pass go to login with password
-	auth.Get("/check_token", middlewares.SetJWtHeaderHandler(), gateway.checkToken)
+	auth.Get("/token", middlewares.SetJWtHeaderHandler(), gateway.checkToken)
 	auth.Post("/register/:role", gateway.Register)
 	auth.Post("/login/:role", gateway.Login)
-	auth.Post("/create_admin", gateway.CreateAdmin)
+	auth.Post("/admin", gateway.CreateAdmin)
 
 	user := api.Group("/user")
 	user.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindUserByID)

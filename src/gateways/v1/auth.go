@@ -12,14 +12,14 @@ import (
 )
 
 // @Summary Check JWT token validity
-// @Description Validates the JWT token passed in the Authorization header
+// @Description Validates the JWT token passed in the Authorization header and decodes it.
 // @Tags Auth
 // @Produce json
 // @Param Authorization header string true "Bearer <JWT token>"
 // @Success 200 {object} entities.ResponseModel "Token is valid"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 404 {object} entities.ResponseMessage "User not found."
-// @Router /auth/check_token [get]
+// @Router /auth/token [get]
 // @Security BearerAuth
 func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
@@ -153,7 +153,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/create_admin [post]
+// @Router /auth/admin [post]
 func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 	bodyData := entities.CreatedUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {

@@ -15,53 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/check_token": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Validates the JWT token passed in the Authorization header",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Check JWT token validity",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Token is valid",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "404": {
-                        "description": "User not found.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/create_admin": {
+        "/auth/admin": {
             "post": {
                 "description": "create new admin user",
                 "consumes": [
@@ -242,6 +196,52 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates the JWT token passed in the Authorization header and decodes it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Check JWT token validity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cJWT token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token is valid",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
