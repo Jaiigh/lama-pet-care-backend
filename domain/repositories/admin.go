@@ -16,7 +16,7 @@ type adminRepository struct {
 
 type IAdminRepository interface {
 	InsertAdmin(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserModel, error)
+	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -56,7 +56,7 @@ func (repo *adminRepository) InsertAdmin(data entities.CreatedUserModel) (*entit
 	}, nil
 }
 
-func (repo *adminRepository) FindByEmail(email string) (*entities.LoginUserModel, error) {
+func (repo *adminRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
 	user, err := repo.Collection.Admin.FindUnique(
 		db.Admin.Email.Equals(email),
 	).Exec(repo.Context)
@@ -66,7 +66,7 @@ func (repo *adminRepository) FindByEmail(email string) (*entities.LoginUserModel
 	if user == nil {
 		return nil, fmt.Errorf("users -> FindByEmail: user data is nil")
 	}
-	return &entities.LoginUserModel{
+	return &entities.LoginUserResponseModel{
 		UserID:   user.Aid,
 		Email:    user.Email,
 		Password: user.Password,

@@ -4,7 +4,7 @@ import (
 	"lama-backend/configuration"
 	ds "lama-backend/domain/datasources"
 	repo "lama-backend/domain/repositories"
-	gw "lama-backend/src/gateways"
+	gw "lama-backend/src/gateways/v1"
 	"lama-backend/src/middlewares"
 	sv "lama-backend/src/services"
 	"log"
@@ -23,7 +23,7 @@ import (
 // @version 1.0
 // @description this is a backend REST API server for LAMA project
 // @host lama-pet-care-backend-qbwz.onrender.com
-// @BasePath /
+// @BasePath /api/v1
 // @Schemes https
 // @securityDefinitions.apikey BearerAuth
 // @in header

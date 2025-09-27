@@ -15,53 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/check_token": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Validates the JWT token passed in the Authorization header",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Check JWT token validity",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Token is valid",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "404": {
-                        "description": "User not found.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/create_admin": {
+        "/auth/admin": {
             "post": {
                 "description": "create new admin user",
                 "consumes": [
@@ -113,7 +67,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/auth/login/{role}": {
             "post": {
                 "description": "Login user",
                 "consumes": [
@@ -131,7 +85,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Role of the user",
                         "name": "role",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -140,7 +94,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.LoginUserModel"
+                            "$ref": "#/definitions/entities.LoginUserRequestModel"
                         }
                     }
                 ],
@@ -184,7 +138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/auth/register/{role}": {
             "post": {
                 "description": "Register new user except admin",
                 "consumes": [
@@ -202,7 +156,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Role of the user except admin",
                         "name": "role",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -242,6 +196,52 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates the JWT token passed in the Authorization header and decodes it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Check JWT token validity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cJWT token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token is valid",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
@@ -449,7 +449,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "specialization": {
-                    "description": "caretaker only",
+                    "description": "caretaker only (optional)",
                     "type": "string"
                 },
                 "telephone_number": {
@@ -457,7 +457,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.LoginUserModel": {
+        "entities.LoginUserRequestModel": {
             "type": "object",
             "required": [
                 "email",
@@ -468,12 +468,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "user_id": {
                     "type": "string"
                 }
             }
@@ -617,7 +611,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "lama-pet-care-backend-qbwz.onrender.com",
-	BasePath:         "/",
+	BasePath:         "/api/v1",
 	Schemes:          []string{"https"},
 	Title:            "LAMA Backend API",
 	Description:      "this is a backend REST API server for LAMA project",
