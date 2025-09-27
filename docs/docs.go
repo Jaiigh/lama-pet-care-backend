@@ -471,9 +471,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
+                    "description": "for response",
                     "type": "string"
                 },
                 "user_id": {
+                    "description": "for response",
                     "type": "string"
                 }
             }
@@ -616,9 +618,9 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "lama-pet-care-backend-qbwz.onrender.com",
-	BasePath:         "/",
-	Schemes:          []string{"https"},
+	Host:             "127.0.0.1:8080",
+	BasePath:         "/api/v1",
+	Schemes:          []string{"http"},
 	Title:            "LAMA Backend API",
 	Description:      "this is a backend REST API server for LAMA project",
 	InfoInstanceName: "swagger",
