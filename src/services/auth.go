@@ -18,7 +18,7 @@ type authService struct {
 type IAuthService interface {
 	CheckToken(td *middlewares.TokenDetails) error
 	Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	Login(role string, data entities.LoginUserModel) (*entities.LoginUserModel, error)
+	Login(role string, data entities.LoginUserRequestModel) (*entities.LoginUserResponseModel, error)
 }
 
 func NewAuthService(repoAdmin repositories.IAdminRepository, repoOwner repositories.IOwnerRepository, repoCaretaker repositories.ICaretakerRepository, repoDoctor repositories.IDoctorRepository) IAuthService {
@@ -82,8 +82,8 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 	return userData, nil
 }
 
-func (sv *authService) Login(role string, data entities.LoginUserModel) (*entities.LoginUserModel, error) {
-	var userData *entities.LoginUserModel
+func (sv *authService) Login(role string, data entities.LoginUserRequestModel) (*entities.LoginUserResponseModel, error) {
+	var userData *entities.LoginUserResponseModel
 	var err error
 	switch role {
 	case "admin":

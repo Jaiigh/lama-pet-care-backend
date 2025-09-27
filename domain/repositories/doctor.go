@@ -16,7 +16,7 @@ type doctorRepository struct {
 
 type IDoctorRepository interface {
 	InsertDoctor(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserModel, error)
+	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -58,7 +58,7 @@ func (repo *doctorRepository) InsertDoctor(data entities.CreatedUserModel) (*ent
 	}, nil
 }
 
-func (repo *doctorRepository) FindByEmail(email string) (*entities.LoginUserModel, error) {
+func (repo *doctorRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
 	user, err := repo.Collection.Doctor.FindUnique(
 		db.Doctor.Email.Equals(email),
 	).Exec(repo.Context)
@@ -68,7 +68,7 @@ func (repo *doctorRepository) FindByEmail(email string) (*entities.LoginUserMode
 	if user == nil {
 		return nil, fmt.Errorf("users -> FindByEmail: user data is nil")
 	}
-	return &entities.LoginUserModel{
+	return &entities.LoginUserResponseModel{
 		UserID:   user.Did,
 		Email:    user.Email,
 		Password: user.Password,

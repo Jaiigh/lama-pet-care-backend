@@ -28,10 +28,15 @@ type UserIDModel struct {
 	UserID string `json:"user_id"`
 }
 
-type LoginUserModel struct {
-	UserID   string `json:"user_id,omitempty"`
+type LoginUserRequestModel struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
+}
+
+type LoginUserResponseModel struct {
+	UserID   string `json:"user_id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 	Role     string `json:"role"`
 }
 

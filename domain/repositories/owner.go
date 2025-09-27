@@ -16,7 +16,7 @@ type ownerRepository struct {
 
 type IOwnerRepository interface {
 	InsertOwner(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserModel, error)
+	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -56,7 +56,7 @@ func (repo *ownerRepository) InsertOwner(data entities.CreatedUserModel) (*entit
 	}, nil
 }
 
-func (repo *ownerRepository) FindByEmail(email string) (*entities.LoginUserModel, error) {
+func (repo *ownerRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
 	user, err := repo.Collection.Owner.FindUnique(
 		db.Owner.Email.Equals(email),
 	).Exec(repo.Context)
@@ -66,7 +66,7 @@ func (repo *ownerRepository) FindByEmail(email string) (*entities.LoginUserModel
 	if user == nil {
 		return nil, fmt.Errorf("users -> FindByEmail: user data is nil")
 	}
-	return &entities.LoginUserModel{
+	return &entities.LoginUserResponseModel{
 		UserID:   user.Oid,
 		Email:    user.Email,
 		Password: user.Password,

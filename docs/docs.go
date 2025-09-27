@@ -140,7 +140,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.LoginUserModel"
+                            "$ref": "#/definitions/entities.LoginUserRequestModel"
                         }
                     }
                 ],
@@ -457,7 +457,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.LoginUserModel": {
+        "entities.LoginUserRequestModel": {
             "type": "object",
             "required": [
                 "email",
@@ -468,14 +468,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
-                },
-                "role": {
-                    "description": "for response",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "for response",
                     "type": "string"
                 }
             }

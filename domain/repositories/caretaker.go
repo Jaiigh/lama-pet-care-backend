@@ -16,7 +16,7 @@ type caretakerRepository struct {
 
 type ICaretakerRepository interface {
 	InsertCaretaker(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserModel, error)
+	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -57,7 +57,7 @@ func (repo *caretakerRepository) InsertCaretaker(data entities.CreatedUserModel)
 	}, nil
 }
 
-func (repo *caretakerRepository) FindByEmail(email string) (*entities.LoginUserModel, error) {
+func (repo *caretakerRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
 	user, err := repo.Collection.Caretaker.FindUnique(
 		db.Caretaker.Email.Equals(email),
 	).Exec(repo.Context)
@@ -67,7 +67,7 @@ func (repo *caretakerRepository) FindByEmail(email string) (*entities.LoginUserM
 	if user == nil {
 		return nil, fmt.Errorf("users -> FindByEmail: user data is nil")
 	}
-	return &entities.LoginUserModel{
+	return &entities.LoginUserResponseModel{
 		UserID:   user.Cid,
 		Email:    user.Email,
 		Password: user.Password,

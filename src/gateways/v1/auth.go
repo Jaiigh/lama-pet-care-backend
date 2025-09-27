@@ -102,7 +102,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param role query string true "Role of the user"
-// @Param body body entities.LoginUserModel true "email and password"
+// @Param body body entities.LoginUserRequestModel true "email and password"
 // @Success 200 {object} entities.ResponseModel "Request successful"
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
@@ -116,7 +116,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
-	bodyData := entities.LoginUserModel{}
+	bodyData := entities.LoginUserRequestModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
