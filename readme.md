@@ -35,6 +35,7 @@ go mod tidy
 ```
 # Swagger
 swagger url: https://lama-pet-care-backend-qbwz.onrender.com/swagger/index.html
+
 update swagger
 ```
 swag init
