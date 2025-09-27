@@ -449,7 +449,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "specialization": {
-                    "description": "caretaker only",
+                    "description": "caretaker only (optional)",
                     "type": "string"
                 },
                 "telephone_number": {

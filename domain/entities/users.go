@@ -48,7 +48,7 @@ type CreatedUserModel struct {
 	TelephoneNumber string    `json:"telephone_number" validate:"required,len=10,numeric"`
 	Address         string    `json:"address" validate:"required"`
 	LicenseNumber   string    `json:"license_number,omitempty"` // doctor only
-	Specialization  string    `json:"specialization,omitempty"` // caretaker only
+	Specialization  string    `json:"specialization,omitempty"` // caretaker only (optional)
 }
 
 type UpdateUserModel struct {
