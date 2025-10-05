@@ -79,7 +79,7 @@ model Mservice {
 
 model Owner {
   user_id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  total_spending   Decimal?  @db.Decimal(12, 2)
+  total_spending   Decimal  @db.Decimal(12, 2) @default(0)
 
   Payment          Payment[]
   Pet              Pet[]
