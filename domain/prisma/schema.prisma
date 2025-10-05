@@ -16,7 +16,7 @@ model Users {
   role             role     @default(owner)
   name             String
   birthdate        DateTime @db.Date
-  telephone_number String   @unique @db.VarChar(10)
+  telephone_number String   @db.VarChar(10)
   address          String
   profile_image   String?
 
@@ -25,6 +25,7 @@ model Users {
   Owner           Owner?
 
   @@unique([email, role], name: "Users_email_role_key")
+  @@unique([telephone_number, role], name: "Users_telephone_number_role_key")
 }
 
 model Caretaker {
