@@ -11,6 +11,7 @@ type UserDataModel struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 	Email           string     `json:"email"`
 	Password        string     `json:"password"`
+	Role            db.Role    `json:"role"`
 	Name            string     `json:"name"`
 	BirthDate       time.Time  `json:"birth_date"`
 	TelephoneNumber string     `json:"telephone_number"`
@@ -34,10 +35,10 @@ type LoginUserRequestModel struct {
 }
 
 type LoginUserResponseModel struct {
-	UserID   string `json:"user_id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	UserID   string  `json:"user_id"`
+	Email    string  `json:"email"`
+	Password string  `json:"password"`
+	Role     db.Role `json:"role"`
 }
 
 type CreatedUserModel struct {
