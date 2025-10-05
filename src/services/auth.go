@@ -38,13 +38,15 @@ func (sv *authService) CheckToken(td *middlewares.TokenDetails) error {
 }
 
 func (sv *authService) Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error) {
-	var userData, roleData *entities.UserDataModel
-	var err error
-	userData, err = sv.UsersRepository.InsertUser(role, data)
+	userData, err := sv.UsersRepository.InsertUser(role, data)
 	if err != nil {
 		return nil, err
 	}
+
+	roleData := &entities.UserDataModel{}
 	switch role {
+	case "admin":
+		roleData.UserID = userData.UserID
 	case "doctor":
 		roleData, err = sv.DoctorRepository.InsertDoctor(userData.UserID, userData.LicenseNumber)
 		if err != nil {
@@ -63,7 +65,7 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 	default:
 		return nil, fmt.Errorf("role is required")
 	}
-	if role != "admin" && userData.UserID != roleData.UserID {
+	if userData.UserID != roleData.UserID {
 		return nil, fmt.Errorf("invalid foreign key user_id")
 	}
 	userData.LicenseNumber = roleData.LicenseNumber
