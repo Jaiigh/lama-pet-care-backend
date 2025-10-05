@@ -15,8 +15,7 @@ type ownerRepository struct {
 }
 
 type IOwnerRepository interface {
-	InsertOwner(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
+	InsertOwner(user_id string) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -29,14 +28,9 @@ func NewOwnerRepository(db *ds.PrismaDB) IOwnerRepository {
 	}
 }
 
-func (repo *ownerRepository) InsertOwner(data entities.CreatedUserModel) (*entities.UserDataModel, error) {
+func (repo *ownerRepository) InsertOwner(user_id string) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Owner.CreateOne(
-		db.Owner.Email.Set(data.Email),
-		db.Owner.Password.Set(data.Password),
-		db.Owner.Name.Set(data.Name),
-		db.Owner.Birthdate.Set(data.BirthDate),
-		db.Owner.TelephoneNumber.Set(data.TelephoneNumber),
-		db.Owner.Address.Set(data.Address),
+		db.Owner.Users.Link(db.Users.ID.Equals(user_id)),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -44,38 +38,14 @@ func (repo *ownerRepository) InsertOwner(data entities.CreatedUserModel) (*entit
 	}
 
 	return &entities.UserDataModel{
-		UserID:          createdData.Oid,
-		CreatedAt:       createdData.CreatedAt,
-		UpdatedAt:       createdData.UpdatedAt,
-		Email:           createdData.Email,
-		Password:        createdData.Password,
-		Name:            createdData.Name,
-		BirthDate:       createdData.Birthdate,
-		TelephoneNumber: createdData.TelephoneNumber,
-		Address:         createdData.Address,
-	}, nil
-}
-
-func (repo *ownerRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
-	user, err := repo.Collection.Owner.FindUnique(
-		db.Owner.Email.Equals(email),
-	).Exec(repo.Context)
-	if err != nil {
-		return nil, fmt.Errorf("users -> FindByEmail: %v", err)
-	}
-	if user == nil {
-		return nil, fmt.Errorf("users -> FindByEmail: user data is nil")
-	}
-	return &entities.LoginUserResponseModel{
-		UserID:   user.Oid,
-		Email:    user.Email,
-		Password: user.Password,
+		UserID:        createdData.UserID,
+		TotalSpending: createdData.TotalSpending,
 	}, nil
 }
 
 func (repo *ownerRepository) FindByID(userID string) (*entities.UserDataModel, error) {
 	user, err := repo.Collection.Owner.FindUnique(
-		db.Owner.Oid.Equals(userID),
+		db.Owner.UserID.Equals(userID),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -86,21 +56,14 @@ func (repo *ownerRepository) FindByID(userID string) (*entities.UserDataModel, e
 	}
 
 	return &entities.UserDataModel{
-		UserID:          user.Oid,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-		Email:           user.Email,
-		Password:        user.Password,
-		Name:            user.Name,
-		BirthDate:       user.Birthdate,
-		TelephoneNumber: user.TelephoneNumber,
-		Address:         user.Address,
+		UserID:        user.UserID,
+		TotalSpending: user.TotalSpending,
 	}, nil
 }
 
 func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel, error) {
 	deletedUser, err := repo.Collection.Owner.FindUnique(
-		db.Owner.Oid.Equals(userID),
+		db.Owner.UserID.Equals(userID),
 	).Delete().Exec(repo.Context) // ลบและคืนค่าที่ถูกลบเลย
 
 	if err != nil {
@@ -111,39 +74,14 @@ func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel,
 	}
 
 	return &entities.UserDataModel{
-		UserID:          deletedUser.Oid,
-		CreatedAt:       deletedUser.CreatedAt,
-		UpdatedAt:       deletedUser.UpdatedAt,
-		Email:           deletedUser.Email,
-		Password:        deletedUser.Password,
-		Name:            deletedUser.Name,
-		BirthDate:       deletedUser.Birthdate,
-		TelephoneNumber: deletedUser.TelephoneNumber,
-		Address:         deletedUser.Address,
+		UserID:        deletedUser.UserID,
+		TotalSpending: deletedUser.TotalSpending,
 	}, nil
 }
 
 func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error) {
 	updates := []db.OwnerSetParam{}
 
-	if data.Email != nil {
-		updates = append(updates, db.Owner.Email.Set(*data.Email))
-	}
-	if data.Password != nil {
-		updates = append(updates, db.Owner.Password.Set(*data.Password))
-	}
-	if data.Name != nil {
-		updates = append(updates, db.Owner.Name.Set(*data.Name))
-	}
-	if data.BirthDate != nil {
-		updates = append(updates, db.Owner.Birthdate.Set(*data.BirthDate))
-	}
-	if data.TelephoneNumber != nil {
-		updates = append(updates, db.Owner.TelephoneNumber.Set(*data.TelephoneNumber))
-	}
-	if data.Address != nil {
-		updates = append(updates, db.Owner.Address.Set(*data.Address))
-	}
 	if data.TotalSpending != nil {
 		updates = append(updates, db.Owner.TotalSpending.Set(*data.TotalSpending))
 	}
@@ -153,7 +91,7 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 	}
 
 	updatedUser, err := repo.Collection.Owner.FindUnique(
-		db.Owner.Oid.Equals(userID),
+		db.Owner.UserID.Equals(userID),
 	).Update(updates...).Exec(repo.Context)
 
 	if err != nil {
@@ -163,21 +101,8 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
 	}
 
-	totalSpending, ok := updatedUser.TotalSpending()
-	if !ok {
-		totalSpending = db.Decimal{}
-	}
-
 	return &entities.UserDataModel{
-		UserID:          updatedUser.Oid,
-		CreatedAt:       updatedUser.CreatedAt,
-		UpdatedAt:       updatedUser.UpdatedAt,
-		Email:           updatedUser.Email,
-		Password:        updatedUser.Password,
-		Name:            updatedUser.Name,
-		BirthDate:       updatedUser.Birthdate,
-		TelephoneNumber: updatedUser.TelephoneNumber,
-		Address:         updatedUser.Address,
-		TotalSpending:   totalSpending,
+		UserID:        updatedUser.UserID,
+		TotalSpending: updatedUser.TotalSpending,
 	}, nil
 }

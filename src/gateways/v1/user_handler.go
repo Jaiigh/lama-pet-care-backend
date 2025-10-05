@@ -24,22 +24,7 @@ func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	var user *entities.UserDataModel
-	switch token.Role {
-	case "caretaker":
-		user, err = h.CaretakerService.FindCaretakerByID(token.UserID)
-	case "doctor":
-		user, err = h.DoctorService.FindDoctorByID(token.UserID)
-	case "owner":
-		user, err = h.OwnerService.FindOwnerByID(token.UserID)
-	case "admin":
-		user, err = h.AdminService.FindAdminByID(token.UserID)
-	default:
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "invalid role",
-		})
-	}
-
+	user, err := h.UsersService.FindUsersByID(token.UserID)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "user not found - details: " + err.Error(),
@@ -70,25 +55,10 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	var deletedUser *entities.UserDataModel
-	switch token.Role {
-	case "caretaker":
-		deletedUser, err = h.CaretakerService.DeleteCaretakerByID(token.UserID)
-	case "doctor":
-		deletedUser, err = h.DoctorService.DeleteDoctorByID(token.UserID)
-	case "owner":
-		deletedUser, err = h.OwnerService.DeleteOwnerByID(token.UserID)
-	case "admin":
-		deletedUser, err = h.AdminService.DeleteAdminByID(token.UserID)
-	default:
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "invalid role",
-		})
-	}
-
+	deletedUser, err := h.UsersService.DeleteUsersByID(token.UserID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "user not found",
+			"error": "user not found, details: " + err.Error(),
 		})
 	}
 
@@ -125,22 +95,7 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	var updatedUser *entities.UserDataModel
-	switch token.Role {
-	case "caretaker":
-		updatedUser, err = h.CaretakerService.UpdateCaretakerByID(token.UserID, updateData)
-	case "doctor":
-		updatedUser, err = h.DoctorService.UpdateDoctorByID(token.UserID, updateData)
-	case "owner":
-		updatedUser, err = h.OwnerService.UpdateOwnerByID(token.UserID, updateData)
-	case "admin":
-		updatedUser, err = h.AdminService.UpdateAdminByID(token.UserID, updateData)
-	default:
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "invalid role",
-		})
-	}
-
+	updatedUser, err := h.UsersService.UpdateUsersByID(token.UserID, updateData)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
