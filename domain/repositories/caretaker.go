@@ -38,10 +38,7 @@ func (repo *caretakerRepository) InsertCaretaker(user_id, specialization string)
 		return nil, fmt.Errorf("users -> InsertUser: %v", err)
 	}
 
-	specialties, ok := createdData.Specialties()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
-	}
+	specialties, _ := createdData.Specialties()
 
 	return &entities.UserDataModel{
 		UserID:         createdData.UserID,
@@ -61,16 +58,8 @@ func (repo *caretakerRepository) FindByID(userID string) (*entities.UserDataMode
 		return nil, fmt.Errorf("users -> FindByID: user data is nil")
 	}
 
-	specialties, ok := user.Specialties()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
-	}
-
-	rating, ok := user.Rating()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: Rating not ok")
-	}
-
+	specialties, _ := user.Specialties()
+	rating, _ := user.Rating()
 	return &entities.UserDataModel{
 		UserID:         user.UserID,
 		Specialization: specialties,
@@ -92,15 +81,8 @@ func (repo *caretakerRepository) DeleteByID(userID string) (*entities.UserDataMo
 		return nil, fmt.Errorf("users -> DeleteByID: user not found")
 	}
 
-	specialties, ok := deletedUser.Specialties()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
-	}
-	rating, ok := deletedUser.Rating()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: Rating not ok")
-	}
-
+	specialties, _ := deletedUser.Specialties()
+	rating, _ := deletedUser.Rating()
 	return &entities.UserDataModel{
 		UserID:         deletedUser.UserID,
 		Specialization: specialties,
@@ -136,15 +118,6 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 		db.Caretaker.UserID.Equals(userID),
 	).Update(updates...).Exec(repo.Context)
 
-	specialization, ok := updatedUser.Specialties()
-	if !ok {
-		specialization = ""
-	}
-	rating, ok := updatedUser.Rating()
-	if !ok {
-		rating = db.Decimal{}
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("users -> UpdateByID: %v", err)
 	}
@@ -152,6 +125,8 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
 	}
 
+	specialization, _ := updatedUser.Specialties()
+	rating, _ := updatedUser.Rating()
 	return &entities.UserDataModel{
 		UserID:         updatedUser.UserID,
 		Specialization: specialization,
