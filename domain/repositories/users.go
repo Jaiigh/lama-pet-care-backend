@@ -7,6 +7,7 @@ import (
 	"lama-backend/domain/prisma/db"
 
 	"fmt"
+	"time"
 )
 
 type usersRepository struct {
@@ -82,6 +83,10 @@ func (repo *usersRepository) FindByEmailAndRole(email string, role string) (*ent
 func (repo *usersRepository) FindByID(userID string) (*entities.UserDataModel, error) {
 	user, err := repo.Collection.Users.FindUnique(
 		db.Users.ID.Equals(userID),
+	).With(
+		db.Users.Caretaker.Fetch(),
+		db.Users.Doctor.Fetch(),
+		db.Users.Owner.Fetch(),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -91,18 +96,7 @@ func (repo *usersRepository) FindByID(userID string) (*entities.UserDataModel, e
 		return nil, fmt.Errorf("users -> FindByID: user data is nil")
 	}
 
-	return &entities.UserDataModel{
-		UserID:          user.ID,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-		Email:           user.Email,
-		Password:        user.Password,
-		Role:            user.Role,
-		Name:            user.Name,
-		BirthDate:       user.Birthdate,
-		TelephoneNumber: user.TelephoneNumber,
-		Address:         user.Address,
-	}, nil
+	return MapToEntities(user), nil
 }
 
 func (repo *usersRepository) DeleteByID(userID string) (*entities.UserDataModel, error) {
@@ -182,4 +176,49 @@ func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserM
 		TelephoneNumber: updatedUser.TelephoneNumber,
 		Address:         updatedUser.Address,
 	}, nil
+}
+
+func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
+	var licenseNumber, specialization string
+	var startDate db.DateTime
+	var startWorkingTime, endWorkingTime time.Time
+	var rating, totalSpending db.Decimal
+	doctor, ok := user.Doctor()
+	if ok {
+		licenseNumber = doctor.LicenseNumber
+		startDate = doctor.StartDate
+		startWorkingTime = doctor.StartWorkingTime
+		endWorkingTime = doctor.EndWorkingTime
+	}
+	caretaker, ok := user.Caretaker()
+	if ok {
+		specialization, _ = caretaker.Specialties()
+		rating, _ = caretaker.Rating()
+		startWorkingTime = caretaker.StartWorkingTime
+		endWorkingTime = caretaker.EndWorkingTime
+	}
+	owner, ok := user.Owner()
+	if ok {
+		totalSpending = owner.TotalSpending
+	}
+
+	return &entities.UserDataModel{
+		UserID:          user.ID,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+		Email:           user.Email,
+		Password:        user.Password,
+		Role:            user.Role,
+		Name:            user.Name,
+		BirthDate:       user.Birthdate,
+		TelephoneNumber: user.TelephoneNumber,
+		Address:         user.Address,
+		LicenseNumber:   licenseNumber,
+		StartDate:       startDate,
+		StartWorkTime:   startWorkingTime,
+		EndWorkTime:     endWorkingTime,
+		Specialization:  specialization,
+		Rating:          rating,
+		TotalSpending:   totalSpending,
+	}
 }
