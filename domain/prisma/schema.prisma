@@ -132,18 +132,6 @@ model Service {
   Pet      Pet            @relation(fields: [PETID], references: [PETID], onDelete: Cascade)
 }
 
-model Admin {
-  AID              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime @updatedAt @db.Timestamptz(6)
-  email            String   @unique
-  password         String
-  name             String
-  birthdate        DateTime @db.Date
-  telephone_number String   @unique @db.VarChar(10)
-  address          String
-}
-
 enum payment_status {
   UNPAID
   PAID
