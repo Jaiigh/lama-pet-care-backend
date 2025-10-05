@@ -15,7 +15,7 @@ type ownerRepository struct {
 }
 
 type IOwnerRepository interface {
-	InsertOwner(data *entities.UserDataModel) (*entities.UserDataModel, error)
+	InsertOwner(user_id string) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -28,9 +28,9 @@ func NewOwnerRepository(db *ds.PrismaDB) IOwnerRepository {
 	}
 }
 
-func (repo *ownerRepository) InsertOwner(data *entities.UserDataModel) (*entities.UserDataModel, error) {
+func (repo *ownerRepository) InsertOwner(user_id string) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Owner.CreateOne(
-		db.Owner.Users.Link(db.Users.ID.Equals(data.UserID)),
+		db.Owner.Users.Link(db.Users.ID.Equals(user_id)),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -38,17 +38,8 @@ func (repo *ownerRepository) InsertOwner(data *entities.UserDataModel) (*entitie
 	}
 
 	return &entities.UserDataModel{
-		UserID:          createdData.UserID,
-		CreatedAt:       data.CreatedAt,
-		UpdatedAt:       data.UpdatedAt,
-		Email:           data.Email,
-		Password:        data.Password,
-		Role:            "owner",
-		Name:            data.Name,
-		BirthDate:       data.BirthDate,
-		TelephoneNumber: data.TelephoneNumber,
-		Address:         data.Address,
-		TotalSpending:   data.TotalSpending,
+		UserID:        createdData.UserID,
+		TotalSpending: createdData.TotalSpending,
 	}, nil
 }
 

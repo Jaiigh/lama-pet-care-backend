@@ -15,7 +15,7 @@ type caretakerRepository struct {
 }
 
 type ICaretakerRepository interface {
-	InsertCaretaker(data *entities.UserDataModel) (*entities.UserDataModel, error)
+	InsertCaretaker(user_id, specialization string) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -28,10 +28,10 @@ func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
 	}
 }
 
-func (repo *caretakerRepository) InsertCaretaker(data *entities.UserDataModel) (*entities.UserDataModel, error) {
+func (repo *caretakerRepository) InsertCaretaker(user_id, specialization string) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Caretaker.CreateOne(
-		db.Caretaker.Users.Link(db.Users.ID.Equals(data.UserID)),
-		db.Caretaker.Specialties.Set(data.Specialization),
+		db.Caretaker.Users.Link(db.Users.ID.Equals(user_id)),
+		db.Caretaker.Specialties.Set(specialization),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -44,17 +44,8 @@ func (repo *caretakerRepository) InsertCaretaker(data *entities.UserDataModel) (
 	}
 
 	return &entities.UserDataModel{
-		UserID:          createdData.UserID,
-		CreatedAt:       data.CreatedAt,
-		UpdatedAt:       data.UpdatedAt,
-		Email:           data.Email,
-		Password:        data.Password,
-		Role:            "caretaker",
-		Name:            data.Name,
-		BirthDate:       data.BirthDate,
-		TelephoneNumber: data.TelephoneNumber,
-		Address:         data.Address,
-		Specialization:  specialties,
+		UserID:         createdData.UserID,
+		Specialization: specialties,
 	}, nil
 }
 

@@ -15,7 +15,7 @@ type doctorRepository struct {
 }
 
 type IDoctorRepository interface {
-	InsertDoctor(data *entities.UserDataModel) (*entities.UserDataModel, error)
+	InsertDoctor(user_id, license_number string) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -28,10 +28,10 @@ func NewDoctorRepository(db *ds.PrismaDB) IDoctorRepository {
 	}
 }
 
-func (repo *doctorRepository) InsertDoctor(data *entities.UserDataModel) (*entities.UserDataModel, error) {
+func (repo *doctorRepository) InsertDoctor(user_id, license_number string) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Doctor.CreateOne(
-		db.Doctor.LicenseNumber.Set(data.LicenseNumber),
-		db.Doctor.Users.Link(db.Users.ID.Equals(data.UserID)),
+		db.Doctor.LicenseNumber.Set(license_number),
+		db.Doctor.Users.Link(db.Users.ID.Equals(user_id)),
 	).Exec(repo.Context)
 
 	if err != nil {

@@ -38,7 +38,7 @@ func (sv *authService) CheckToken(td *middlewares.TokenDetails) error {
 }
 
 func (sv *authService) Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error) {
-	var userData *entities.UserDataModel
+	var userData, roleData *entities.UserDataModel
 	var err error
 	userData, err = sv.UsersRepository.InsertUser(role, data)
 	if err != nil {
@@ -46,23 +46,29 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 	}
 	switch role {
 	case "doctor":
-		userData, err = sv.DoctorRepository.InsertDoctor(userData)
+		roleData, err = sv.DoctorRepository.InsertDoctor(userData.UserID, userData.LicenseNumber)
 		if err != nil {
 			return nil, err
 		}
 	case "caretaker":
-		userData, err = sv.CaretakerRepository.InsertCaretaker(userData)
+		roleData, err = sv.CaretakerRepository.InsertCaretaker(userData.UserID, userData.Specialization)
 		if err != nil {
 			return nil, err
 		}
 	case "owner":
-		userData, err = sv.OwnerRepository.InsertOwner(userData)
+		roleData, err = sv.OwnerRepository.InsertOwner(userData.UserID)
 		if err != nil {
 			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("role is required")
 	}
+	if role != "admin" && userData.UserID != roleData.UserID {
+		return nil, fmt.Errorf("invalid foreign key user_id")
+	}
+	userData.LicenseNumber = roleData.LicenseNumber
+	userData.Specialization = roleData.Specialization
+	userData.TotalSpending = roleData.TotalSpending
 	return userData, nil
 }
 
