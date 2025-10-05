@@ -24,7 +24,7 @@ model Users {
   Doctor          Doctor?
   Owner           Owner?
 
-  @@unique([email, role])
+  @@unique([email, role], name: "Users_email_role_key")
 }
 
 model Caretaker {

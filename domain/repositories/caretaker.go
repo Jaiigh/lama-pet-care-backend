@@ -15,7 +15,7 @@ type caretakerRepository struct {
 }
 
 type ICaretakerRepository interface {
-	InsertCaretaker(user_id string, data entities.UserDataModel) (*entities.UserDataModel, error)
+	InsertCaretaker(data *entities.UserDataModel) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -28,9 +28,9 @@ func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
 	}
 }
 
-func (repo *caretakerRepository) InsertCaretaker(user_id string, data entities.UserDataModel) (*entities.UserDataModel, error) {
+func (repo *caretakerRepository) InsertCaretaker(data *entities.UserDataModel) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Caretaker.CreateOne(
-		db.Caretaker.Users.Link(db.Users.ID.Equals(user_id)),
+		db.Caretaker.Users.Link(db.Users.ID.Equals(data.UserID)),
 		db.Caretaker.Specialties.Set(data.Specialization),
 	).Exec(repo.Context)
 

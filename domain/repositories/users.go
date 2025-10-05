@@ -15,8 +15,8 @@ type usersRepository struct {
 }
 
 type IUsersRepository interface {
-	InsertUser(data entities.CreatedUserModel) (*entities.UserDataModel, error)
-	FindByEmail(email string) (*entities.LoginUserResponseModel, error)
+	InsertUser(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error)
+	FindByEmailAndRole(email string, role string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -29,7 +29,7 @@ func NewUsersRepository(db *ds.PrismaDB) IUsersRepository {
 	}
 }
 
-func (repo *usersRepository) InsertUser(data entities.CreatedUserModel) (*entities.UserDataModel, error) {
+func (repo *usersRepository) InsertUser(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Users.CreateOne(
 		db.Users.Email.Set(data.Email),
 		db.Users.Password.Set(data.Password),
@@ -37,6 +37,7 @@ func (repo *usersRepository) InsertUser(data entities.CreatedUserModel) (*entiti
 		db.Users.Birthdate.Set(data.BirthDate),
 		db.Users.TelephoneNumber.Set(data.TelephoneNumber),
 		db.Users.Address.Set(data.Address),
+		db.Users.Role.Set(db.Role(role)),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -57,9 +58,12 @@ func (repo *usersRepository) InsertUser(data entities.CreatedUserModel) (*entiti
 	}, nil
 }
 
-func (repo *usersRepository) FindByEmail(email string) (*entities.LoginUserResponseModel, error) {
+func (repo *usersRepository) FindByEmailAndRole(email string, role string) (*entities.LoginUserResponseModel, error) {
 	user, err := repo.Collection.Users.FindUnique(
-		db.Users.Email.Equals(email),
+		db.Users.UsersEmailRoleKey(
+			db.Users.Email.Equals(email),
+			db.Users.Role.Equals(db.Role(role)),
+		),
 	).Exec(repo.Context)
 	if err != nil {
 		return nil, fmt.Errorf("users -> FindByEmail: %v", err)

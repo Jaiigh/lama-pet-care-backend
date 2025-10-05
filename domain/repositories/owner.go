@@ -15,7 +15,7 @@ type ownerRepository struct {
 }
 
 type IOwnerRepository interface {
-	InsertOwner(user_id string, data entities.UserDataModel) (*entities.UserDataModel, error)
+	InsertOwner(data *entities.UserDataModel) (*entities.UserDataModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
@@ -28,9 +28,9 @@ func NewOwnerRepository(db *ds.PrismaDB) IOwnerRepository {
 	}
 }
 
-func (repo *ownerRepository) InsertOwner(user_id string, data entities.UserDataModel) (*entities.UserDataModel, error) {
+func (repo *ownerRepository) InsertOwner(data *entities.UserDataModel) (*entities.UserDataModel, error) {
 	createdData, err := repo.Collection.Owner.CreateOne(
-		db.Owner.Users.Link(db.Users.ID.Equals(user_id)),
+		db.Owner.Users.Link(db.Users.ID.Equals(data.UserID)),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -64,14 +64,9 @@ func (repo *ownerRepository) FindByID(userID string) (*entities.UserDataModel, e
 		return nil, fmt.Errorf("users -> FindByID: user data is nil")
 	}
 
-	totalSpending, ok := user.TotalSpending()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
-	}
-
 	return &entities.UserDataModel{
 		UserID:        user.UserID,
-		TotalSpending: totalSpending,
+		TotalSpending: user.TotalSpending,
 	}, nil
 }
 
@@ -87,14 +82,9 @@ func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel,
 		return nil, fmt.Errorf("users -> DeleteByID: user not found")
 	}
 
-	totalSpending, ok := deletedUser.TotalSpending()
-	if !ok {
-		return nil, fmt.Errorf("users -> FindByID: specialties not ok")
-	}
-
 	return &entities.UserDataModel{
 		UserID:        deletedUser.UserID,
-		TotalSpending: totalSpending,
+		TotalSpending: deletedUser.TotalSpending,
 	}, nil
 }
 
@@ -120,13 +110,8 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
 	}
 
-	totalSpending, ok := updatedUser.TotalSpending()
-	if !ok {
-		totalSpending = db.Decimal{}
-	}
-
 	return &entities.UserDataModel{
 		UserID:        updatedUser.UserID,
-		TotalSpending: totalSpending,
+		TotalSpending: updatedUser.TotalSpending,
 	}, nil
 }
