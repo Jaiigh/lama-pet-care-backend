@@ -42,7 +42,7 @@ func (repo *caretakerRepository) InsertCaretaker(user_id, specialization string)
 
 	return &entities.UserDataModel{
 		UserID:         createdData.UserID,
-		Specialization: specialties,
+		Specialization: &specialties,
 	}, nil
 }
 
@@ -62,10 +62,10 @@ func (repo *caretakerRepository) FindByID(userID string) (*entities.UserDataMode
 	rating, _ := user.Rating()
 	return &entities.UserDataModel{
 		UserID:         user.UserID,
-		Specialization: specialties,
-		StartWorkTime:  user.StartWorkingTime,
-		EndWorkTime:    user.EndWorkingTime,
-		Rating:         rating,
+		Specialization: &specialties,
+		StartWorkTime:  &user.StartWorkingTime,
+		EndWorkTime:    &user.EndWorkingTime,
+		Rating:         &rating,
 	}, nil
 }
 
@@ -85,10 +85,10 @@ func (repo *caretakerRepository) DeleteByID(userID string) (*entities.UserDataMo
 	rating, _ := deletedUser.Rating()
 	return &entities.UserDataModel{
 		UserID:         deletedUser.UserID,
-		Specialization: specialties,
-		StartWorkTime:  deletedUser.StartWorkingTime,
-		EndWorkTime:    deletedUser.EndWorkingTime,
-		Rating:         rating,
+		Specialization: &specialties,
+		StartWorkTime:  &deletedUser.StartWorkingTime,
+		EndWorkTime:    &deletedUser.EndWorkingTime,
+		Rating:         &rating,
 	}, nil
 }
 
@@ -129,9 +129,9 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 	rating, _ := updatedUser.Rating()
 	return &entities.UserDataModel{
 		UserID:         updatedUser.UserID,
-		Specialization: specialization,
-		StartWorkTime:  updatedUser.StartWorkingTime,
-		EndWorkTime:    updatedUser.EndWorkingTime,
-		Rating:         rating,
+		Specialization: &specialization,
+		StartWorkTime:  &updatedUser.StartWorkingTime,
+		EndWorkTime:    &updatedUser.EndWorkingTime,
+		Rating:         &rating,
 	}, nil
 }

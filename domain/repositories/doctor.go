@@ -40,7 +40,7 @@ func (repo *doctorRepository) InsertDoctor(user_id, license_number string) (*ent
 
 	return &entities.UserDataModel{
 		UserID:        createdData.UserID,
-		LicenseNumber: createdData.LicenseNumber,
+		LicenseNumber: &createdData.LicenseNumber,
 	}, nil
 }
 
@@ -58,10 +58,10 @@ func (repo *doctorRepository) FindByID(userID string) (*entities.UserDataModel, 
 
 	return &entities.UserDataModel{
 		UserID:        user.UserID,
-		LicenseNumber: user.LicenseNumber,
-		StartDate:     user.StartDate,
-		StartWorkTime: user.StartWorkingTime,
-		EndWorkTime:   user.EndWorkingTime,
+		LicenseNumber: &user.LicenseNumber,
+		StartDate:     &user.StartDate,
+		StartWorkTime: &user.StartWorkingTime,
+		EndWorkTime:   &user.EndWorkingTime,
 	}, nil
 }
 
@@ -79,10 +79,10 @@ func (repo *doctorRepository) DeleteByID(userID string) (*entities.UserDataModel
 
 	return &entities.UserDataModel{
 		UserID:        deletedUser.UserID,
-		LicenseNumber: deletedUser.LicenseNumber,
-		StartDate:     deletedUser.StartDate,
-		StartWorkTime: deletedUser.StartWorkingTime,
-		EndWorkTime:   deletedUser.EndWorkingTime,
+		LicenseNumber: &deletedUser.LicenseNumber,
+		StartDate:     &deletedUser.StartDate,
+		StartWorkTime: &deletedUser.StartWorkingTime,
+		EndWorkTime:   &deletedUser.EndWorkingTime,
 	}, nil
 }
 
@@ -121,9 +121,9 @@ func (repo *doctorRepository) UpdateByID(userID string, data entities.UpdateUser
 
 	return &entities.UserDataModel{
 		UserID:        updatedUser.UserID,
-		LicenseNumber: updatedUser.LicenseNumber,
-		StartDate:     updatedUser.StartDate,
-		StartWorkTime: updatedUser.StartWorkingTime,
-		EndWorkTime:   updatedUser.EndWorkingTime,
+		LicenseNumber: &updatedUser.LicenseNumber,
+		StartDate:     &updatedUser.StartDate,
+		StartWorkTime: &updatedUser.StartWorkingTime,
+		EndWorkTime:   &updatedUser.EndWorkingTime,
 	}, nil
 }
