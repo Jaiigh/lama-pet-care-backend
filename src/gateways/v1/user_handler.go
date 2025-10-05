@@ -58,7 +58,7 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 	deletedUser, err := h.UsersService.DeleteUsersByID(token.UserID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "user not found",
+			"error": "user not found, details: " + err.Error(),
 		})
 	}
 
