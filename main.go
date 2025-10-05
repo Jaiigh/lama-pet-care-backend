@@ -47,18 +47,18 @@ func main() {
 
 	defer prismadb.PrismaDB.Prisma.Disconnect()
 
-	adminRepo := repo.NewAdminRepository(prismadb)
+	usersRepo := repo.NewUsersRepository(prismadb)
 	ownerRepo := repo.NewOwnerRepository(prismadb)
 	caretakerRepo := repo.NewCaretakerRepository(prismadb)
 	doctorRepo := repo.NewDoctorRepository(prismadb)
 
-	svAuth := sv.NewAuthService(adminRepo, ownerRepo, caretakerRepo, doctorRepo)
+	authService := sv.NewAuthService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
+	usersService := sv.NewUsersService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
 	ownerService := sv.NewOwnerService(ownerRepo)
-	adminService := sv.NewAdminService(adminRepo)
 	doctorService := sv.NewDoctorService(doctorRepo)
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
 
-	gw.NewHTTPGateway(app, svAuth, ownerService, adminService, doctorService, caretakerService)
+	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
