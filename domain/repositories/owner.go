@@ -39,7 +39,7 @@ func (repo *ownerRepository) InsertOwner(user_id string) (*entities.UserDataMode
 
 	return &entities.UserDataModel{
 		UserID:        createdData.UserID,
-		TotalSpending: &createdData.TotalSpending,
+		TotalSpending: createdData.TotalSpending,
 	}, nil
 }
 
@@ -57,7 +57,7 @@ func (repo *ownerRepository) FindByID(userID string) (*entities.UserDataModel, e
 
 	return &entities.UserDataModel{
 		UserID:        user.UserID,
-		TotalSpending: &user.TotalSpending,
+		TotalSpending: user.TotalSpending,
 	}, nil
 }
 
@@ -75,7 +75,7 @@ func (repo *ownerRepository) DeleteByID(userID string) (*entities.UserDataModel,
 
 	return &entities.UserDataModel{
 		UserID:        deletedUser.UserID,
-		TotalSpending: &deletedUser.TotalSpending,
+		TotalSpending: deletedUser.TotalSpending,
 	}, nil
 }
 
@@ -103,6 +103,6 @@ func (repo *ownerRepository) UpdateByID(userID string, data entities.UpdateUserM
 
 	return &entities.UserDataModel{
 		UserID:        updatedUser.UserID,
-		TotalSpending: &updatedUser.TotalSpending,
+		TotalSpending: updatedUser.TotalSpending,
 	}, nil
 }

@@ -418,6 +418,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "db.Role": {
+            "type": "string",
+            "enum": [
+                "admin",
+                "owner",
+                "doctor",
+                "caretaker"
+            ],
+            "x-enum-varnames": [
+                "RoleAdmin",
+                "RoleOwner",
+                "RoleDoctor",
+                "RoleCaretaker"
+            ]
+        },
         "entities.CreatedUserModel": {
             "type": "object",
             "required": [
@@ -572,6 +587,9 @@ const docTemplate = `{
                 },
                 "rating": {
                     "type": "number"
+                },
+                "role": {
+                    "$ref": "#/definitions/db.Role"
                 },
                 "specialization": {
                     "type": "string"

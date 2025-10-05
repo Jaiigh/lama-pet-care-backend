@@ -6,23 +6,23 @@ import (
 )
 
 type UserDataModel struct {
-	UserID          string      `json:"user_id"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
-	Email           string      `json:"email"`
-	Password        string      `json:"password"`
-	Role            db.Role     `json:"role"`
-	Name            string      `json:"name"`
-	BirthDate       time.Time   `json:"birth_date"`
-	TelephoneNumber string      `json:"telephone_number"`
-	Address         string      `json:"address"`
-	LicenseNumber   *string     `json:"license_number,omitempty"`
-	StartDate       *time.Time  `json:"start_date,omitempty"`
-	StartWorkTime   *time.Time  `json:"start_work_time,omitempty"`
-	EndWorkTime     *time.Time  `json:"end_work_time,omitempty"`
-	Specialization  *string     `json:"specialization,omitempty"`
-	Rating          *db.Decimal `json:"rating,omitempty"`
-	TotalSpending   *db.Decimal `json:"total_spending,omitempty"`
+	UserID          string     `json:"user_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	Email           string     `json:"email"`
+	Password        string     `json:"password"`
+	Role            db.Role    `json:"role"`
+	Name            string     `json:"name"`
+	BirthDate       time.Time  `json:"birth_date"`
+	TelephoneNumber string     `json:"telephone_number"`
+	Address         string     `json:"address"`
+	LicenseNumber   string     `json:"license_number,omitempty"`
+	StartDate       time.Time  `json:"start_date,omitempty"`
+	StartWorkTime   time.Time  `json:"start_work_time,omitempty"`
+	EndWorkTime     time.Time  `json:"end_work_time,omitempty"`
+	Specialization  string     `json:"specialization,omitempty"`
+	Rating          db.Decimal `json:"rating,omitempty"`
+	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
 type UserIDModel struct {

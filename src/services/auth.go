@@ -48,12 +48,12 @@ func (sv *authService) Register(role string, data entities.CreatedUserModel) (*e
 	case "admin":
 		roleData.UserID = userData.UserID
 	case "doctor":
-		roleData, err = sv.DoctorRepository.InsertDoctor(userData.UserID, *userData.LicenseNumber)
+		roleData, err = sv.DoctorRepository.InsertDoctor(userData.UserID, userData.LicenseNumber)
 		if err != nil {
 			return nil, err
 		}
 	case "caretaker":
-		roleData, err = sv.CaretakerRepository.InsertCaretaker(userData.UserID, *userData.Specialization)
+		roleData, err = sv.CaretakerRepository.InsertCaretaker(userData.UserID, userData.Specialization)
 		if err != nil {
 			return nil, err
 		}
