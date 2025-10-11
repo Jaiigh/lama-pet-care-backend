@@ -21,4 +21,7 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	user.Get("/", middlewares.SetJWtHeaderHandler(), gateway.FindUserByID)
 	user.Patch("/", middlewares.SetJWtHeaderHandler(), gateway.UpdateUserByID)
 	user.Delete("/", middlewares.SetJWtHeaderHandler(), gateway.DeleteUserByID)
+
+	services := api.Group("/services", middlewares.SetJWtHeaderHandler())
+	services.Post("/", gateway.CreateService)
 }
