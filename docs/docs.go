@@ -249,6 +249,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/services/": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "owner creates a service booking for a pet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "create service booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cJWT token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "service data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateServiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/user/": {
             "get": {
                 "security": [
@@ -432,6 +508,43 @@ const docTemplate = `{
                 "RoleDoctor",
                 "RoleCaretaker"
             ]
+        },
+        "entities.CreateServiceRequest": {
+            "type": "object",
+            "required": [
+                "owner_id",
+                "payment_id",
+                "pet_id",
+                "price",
+                "reserve_date",
+                "status"
+            ],
+            "properties": {
+                "owner_id": {
+                    "type": "string"
+                },
+                "payment_id": {
+                    "type": "string"
+                },
+                "pet_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "reserve_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "wait",
+                        "ongoing",
+                        "finish"
+                    ]
+                }
+            }
         },
         "entities.CreatedUserModel": {
             "type": "object",
