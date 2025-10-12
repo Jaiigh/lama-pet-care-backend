@@ -2,6 +2,7 @@
 .vscode
 .env
 go.sum
+.DS_Store
 
 /docs/swagger.json
 /docs/swagger.yaml
