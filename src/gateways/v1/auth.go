@@ -4,6 +4,7 @@ import (
 	"lama-backend/domain/entities"
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
+	"os"
 
 	"time"
 
@@ -71,6 +72,9 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
 	}
 
+	if check := utils.ValidPassword(bodyData.Password); !check {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "password must be at least 8 characters long"})
+	}
 	hashPassword, err := utils.HashPassword(bodyData.Password)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
@@ -189,5 +193,94 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 		Message: "success",
 		Data:    token,
 		Status:  fiber.StatusOK,
+	})
+}
+
+// @Summary forgot password
+// @Description forgot password and send reset link to email
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body entities.UserSendEmailModel true "user email and role"
+// @Success 200 {object} entities.ResponseMessage "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid json body"
+// @Failure 422 {object} entities.ResponseMessage "Validation error"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /auth/password/email [post]
+func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
+	bodyData := entities.UserSendEmailModel{}
+	if err := ctx.BodyParser(&bodyData); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+	if err := validator.New().Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
+	}
+
+	userID, err := h.AuthService.ValidateEmailAndRole(&bodyData)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot send reset password mail: " + err.Error()})
+	}
+
+	token, err := middlewares.GenerateResetPasswordJWTToken(userID, string(bodyData.Role))
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
+			Message: "Failed to generate token",
+		})
+	}
+
+	resetLink := os.Getenv("FORGET_PASSWORD_LINK")
+	if err := utils.SendResetEmail(bodyData.Email, resetLink+*token.Token); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to send email: " + err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
+		Message: "success",
+	})
+}
+
+// @Summary reset password
+// @Description reset password with token from email
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param token query string true "token from email"
+// @Param body body entities.UserPasswordModel true "user new password"
+// @Success 200 {object} entities.ResponseMessage "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid json body"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 422 {object} entities.ResponseMessage "Validation error"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /auth/password [post]
+func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
+	emailToken := ctx.Query("token")
+	token, err := middlewares.DecodeResetPasswordJWTToken(emailToken)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+
+	bodyData := entities.UserPasswordModel{}
+	if err := ctx.BodyParser(&bodyData); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+	if err := validator.New().Struct(bodyData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
+	}
+
+	if check := utils.ValidPassword(bodyData.Password); !check {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "password must be at least 8 characters long"})
+	}
+	hashPassword, err := utils.HashPassword(bodyData.Password)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
+	}
+
+	updatedData := entities.UpdateUserModel{}
+	updatedData.Password = &hashPassword
+	if _, err := h.UsersService.UpdateUsersByID(token.UserID, updatedData); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot update password: " + err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseMessage{
+		Message: "success",
 	})
 }

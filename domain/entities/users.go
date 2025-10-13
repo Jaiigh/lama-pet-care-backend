@@ -25,8 +25,13 @@ type UserDataModel struct {
 	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
-type UserIDModel struct {
-	UserID string `json:"user_id"`
+type UserSendEmailModel struct {
+	Email string  `json:"email" validate:"required,email"`
+	Role  db.Role `json:"role" validate:"required"`
+}
+
+type UserPasswordModel struct {
+	Password string `json:"password" validate:"required"`
 }
 
 type LoginUserRequestModel struct {

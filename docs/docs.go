@@ -138,6 +138,123 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/password": {
+            "post": {
+                "description": "reset password with token from email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "reset password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token from email",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "user new password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UserPasswordModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/email": {
+            "post": {
+                "description": "forgot password and send reset link to email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "forgot password",
+                "parameters": [
+                    {
+                        "description": "user email and role",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UserSendEmailModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register/{role}": {
             "post": {
                 "description": "Register new user except admin",
@@ -798,6 +915,32 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "entities.UserPasswordModel": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.UserSendEmailModel": {
+            "type": "object",
+            "required": [
+                "email",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/db.Role"
                 }
             }
         }
