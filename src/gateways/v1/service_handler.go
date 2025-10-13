@@ -10,12 +10,12 @@ import (
 )
 
 // @Summary create service booking
-// @Description owner creates a service booking for a pet
+// @Description owner creates their own booking; admins may create on behalf of an owner by providing owner_id in the payload
 // @Tags service
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer <JWT token>"
-// @Param body body entities.CreateServiceRequest true "service data"
+// @Param body body entities.CreateServiceRequest true "service data (admins must include owner_id)"
 // @Success 201 {object} entities.ResponseModel "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
@@ -29,7 +29,7 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
-	if token.Role != "owner" {
+	if token.Role != "owner" && token.Role != "admin" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
@@ -38,7 +38,15 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
-	req.OwnerID = token.UserID
+	// default to token.UserID, but admins must supply the owner to assign
+	switch token.Role {
+	case "owner":
+		req.OwnerID = token.UserID
+	case "admin":
+		if req.OwnerID == "" {
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "owner_id is required for admin"})
+		}
+	}
 
 	if err := validator.New().Struct(req); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{

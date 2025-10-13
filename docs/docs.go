@@ -373,7 +373,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "owner creates a service booking for a pet",
+                "description": "owner creates their own booking; admins may create on behalf of an owner by providing owner_id in the payload",
                 "consumes": [
                     "application/json"
                 ],
@@ -393,7 +393,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "service data",
+                        "description": "service data (admins must include owner_id)",
                         "name": "body",
                         "in": "body",
                         "required": true,
