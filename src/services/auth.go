@@ -19,6 +19,7 @@ type IAuthService interface {
 	CheckToken(td *middlewares.TokenDetails) error
 	Register(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error)
 	Login(role string, data entities.LoginUserRequestModel) (*entities.LoginUserResponseModel, error)
+	ValidateEmailAndRole(data *entities.UserSendEmailModel) (string, error)
 }
 
 func NewAuthService(repoUsers repositories.IUsersRepository, repoOwner repositories.IOwnerRepository, repoCaretaker repositories.ICaretakerRepository, repoDoctor repositories.IDoctorRepository) IAuthService {
@@ -83,4 +84,12 @@ func (sv *authService) Login(role string, data entities.LoginUserRequestModel) (
 		return nil, fmt.Errorf("invalid password")
 	}
 	return userData, nil
+}
+
+func (sv *authService) ValidateEmailAndRole(data *entities.UserSendEmailModel) (string, error) {
+	userData, err := sv.UsersRepository.FindByEmailAndRole(data.Email, string(data.Role))
+	if err != nil {
+		return "", err
+	}
+	return userData.UserID, err
 }
