@@ -14,6 +14,8 @@ type ServiceService struct {
 
 type IServiceService interface {
 	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error)
+	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
+	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
 }
 
 func NewServiceService(repo repositories.IServiceRepository) IServiceService {
@@ -29,4 +31,12 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	}
 
 	return s.Repo.Insert(data)
+}
+
+func (s *ServiceService) DeleteServiceByID(serviceID string) (*entities.ServiceModel, error) {
+	return s.Repo.DeleteByID(serviceID)
+}
+
+func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceModel, error) {
+	return s.Repo.FindByID(serviceID)
 }
