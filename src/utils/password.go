@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"regexp"
+	// "regexp"
 
 	"os"
 
@@ -22,20 +22,21 @@ func CheckPasswordHash(password, hash string) bool {
 }
 
 func ValidPassword(password string) bool {
-	if len(password) < 8 {
-		return false
-	}
+	// if len(password) < 8 {
+	// 	return false
+	// }
 
-	// Check for at least one uppercase letter
-	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
-	// Check for at least one lowercase letter
-	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
-	// Check for at least one digit
-	hasDigit := regexp.MustCompile(`\d`).MatchString(password)
-	// Check for at least one special character
-	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]`).MatchString(password)
+	// // Check for at least one uppercase letter
+	// hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	// // Check for at least one lowercase letter
+	// hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	// // Check for at least one digit
+	// hasDigit := regexp.MustCompile(`\d`).MatchString(password)
+	// // Check for at least one special character
+	// hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]`).MatchString(password)
 
-	return hasUpper && hasLower && hasDigit && hasSpecial
+	// return hasUpper && hasLower && hasDigit && hasSpecial
+	return len(password) >= 8
 }
 
 func SendResetEmail(toEmail string, resetLink string) error {

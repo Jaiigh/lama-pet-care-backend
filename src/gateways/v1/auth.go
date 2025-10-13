@@ -72,6 +72,9 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "license_number is required for doctor"})
 	}
 
+	if check := utils.ValidPassword(bodyData.Password); !check {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "password must be at least 8 characters long"})
+	}
 	hashPassword, err := utils.HashPassword(bodyData.Password)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
@@ -263,7 +266,10 @@ func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
-	hashPassword, err := utils.HashPassword(string(bodyData.Password))
+	if check := utils.ValidPassword(bodyData.Password); !check {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "password must be at least 8 characters long"})
+	}
+	hashPassword, err := utils.HashPassword(bodyData.Password)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: "cannot hash password: " + err.Error()})
 	}

@@ -31,7 +31,7 @@ type UserSendEmailModel struct {
 }
 
 type UserPasswordModel struct {
-	Password db.Role `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type LoginUserRequestModel struct {
