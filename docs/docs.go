@@ -851,7 +851,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "$ref": "#/definitions/db.Role"
+                    "type": "string"
                 }
             }
         },

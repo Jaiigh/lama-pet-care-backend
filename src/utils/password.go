@@ -42,7 +42,8 @@ func ValidPassword(password string) bool {
 func SendResetEmail(toEmail string, resetLink string) error {
 	m := gomail.NewMessage()
 	app_email := os.Getenv("SMTP_USER")
-	m.SetHeader("From", "no-reply@lama.com")
+	// m.SetHeader("From", app_email, "no-reply@lama.com")
+	m.SetAddressHeader("From", app_email, "Lama Support")
 	m.SetHeader("To", toEmail)
 	m.SetHeader("Subject", "Password Reset Link")
 	m.SetBody("text/html", fmt.Sprintf(`
