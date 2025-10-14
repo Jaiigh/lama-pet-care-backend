@@ -111,6 +111,8 @@ func (repo *usersRepository) DeleteByID(userID string) (*entities.UserDataModel,
 		return nil, fmt.Errorf("users -> DeleteByID: user not found")
 	}
 
+	profileImage, _ := deletedUser.ProfileImage()
+
 	return &entities.UserDataModel{
 		UserID:          deletedUser.ID,
 		CreatedAt:       deletedUser.CreatedAt,
@@ -122,6 +124,7 @@ func (repo *usersRepository) DeleteByID(userID string) (*entities.UserDataModel,
 		BirthDate:       deletedUser.Birthdate,
 		TelephoneNumber: deletedUser.TelephoneNumber,
 		Address:         deletedUser.Address,
+		Profile:         profileImage,
 	}, nil
 }
 
@@ -147,6 +150,9 @@ func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserM
 	if data.Address != nil {
 		updates = append(updates, db.Users.Address.Set(*data.Address))
 	}
+	if data.Profile != nil {
+		updates = append(updates, db.Users.ProfileImage.Set(*data.Profile))
+	}
 
 	if len(updates) == 0 {
 		return nil, fmt.Errorf("users -> UpdateByID: no fields to update")
@@ -164,6 +170,8 @@ func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserM
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
 	}
 
+	profileImage, _ := updatedUser.ProfileImage()
+
 	return &entities.UserDataModel{
 		UserID:          updatedUser.ID,
 		CreatedAt:       updatedUser.CreatedAt,
@@ -175,6 +183,7 @@ func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserM
 		BirthDate:       updatedUser.Birthdate,
 		TelephoneNumber: updatedUser.TelephoneNumber,
 		Address:         updatedUser.Address,
+		Profile:         profileImage,
 	}, nil
 }
 
@@ -183,6 +192,8 @@ func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
 	var startDate db.DateTime
 	var startWorkingTime, endWorkingTime time.Time
 	var rating, totalSpending db.Decimal
+
+	profileImage, _ := user.ProfileImage()
 	doctor, ok := user.Doctor()
 	if ok {
 		licenseNumber = doctor.LicenseNumber
@@ -213,6 +224,7 @@ func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
 		BirthDate:       user.Birthdate,
 		TelephoneNumber: user.TelephoneNumber,
 		Address:         user.Address,
+		Profile:         profileImage,
 		LicenseNumber:   licenseNumber,
 		StartDate:       startDate,
 		StartWorkTime:   startWorkingTime,

@@ -16,6 +16,7 @@ type UserDataModel struct {
 	BirthDate       time.Time  `json:"birth_date"`
 	TelephoneNumber string     `json:"telephone_number"`
 	Address         string     `json:"address"`
+	Profile         string     `json:"profile,omitempty"`
 	LicenseNumber   string     `json:"license_number,omitempty"`
 	StartDate       time.Time  `json:"start_date,omitempty"`
 	StartWorkTime   time.Time  `json:"start_work_time,omitempty"`
@@ -25,12 +26,12 @@ type UserDataModel struct {
 	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
-type UserSendEmailModel struct {
+type SendEmailModel struct {
 	Email string  `json:"email" validate:"required,email"`
 	Role  db.Role `json:"role" validate:"required"`
 }
 
-type UserPasswordModel struct {
+type PasswordModel struct {
 	Password string `json:"password" validate:"required"`
 }
 
@@ -64,6 +65,7 @@ type UpdateUserModel struct {
 	BirthDate       *time.Time  `json:"birth_date,omitempty"`
 	TelephoneNumber *string     `json:"telephone_number,omitempty"`
 	Address         *string     `json:"address,omitempty"`
+	Profile         *string     `json:"profile,omitempty"`
 	LicenseNumber   *string     `json:"license_number,omitempty"`  // doctor only
 	StartDate       *time.Time  `json:"start_date,omitempty"`      // doctor only
 	StartWorkTime   *time.Time  `json:"start_work_time,omitempty"` // doctor/caretaker only

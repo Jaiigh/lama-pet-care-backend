@@ -16,7 +16,6 @@ import (
 // @Description Validates the JWT token passed in the Authorization header and decodes it.
 // @Tags Auth
 // @Produce json
-// @Param Authorization header string true "Bearer <JWT token>"
 // @Success 200 {object} entities.ResponseModel "Token is valid"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 404 {object} entities.ResponseMessage "User not found."
@@ -51,6 +50,7 @@ func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/register/{role} [post]
+// @Security
 func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 	role := ctx.Params("role")
 	if role != "doctor" && role != "caretaker" && role != "owner" {
@@ -114,6 +114,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 // @Failure 401 {object} entities.ResponseMessage "Cannot login user: invalid password or email"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/login/{role} [post]
+// @Security
 func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 	role := ctx.Params("role")
 	if role != "admin" && role != "doctor" && role != "caretaker" && role != "owner" {
@@ -155,10 +156,20 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 // @Param body body entities.CreatedUserModel true "Admin user data"
 // @Success 200 {object} entities.ResponseModel "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/admin [post]
+// @Security BearerAuth
 func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
 	bodyData := entities.CreatedUserModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
@@ -182,16 +193,9 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateJWTToken(userData.UserID, "admin")
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
-			Message: "Failed to generate token",
-		})
-	}
-
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
-		Data:    token,
+		Data:    userData,
 		Status:  fiber.StatusOK,
 	})
 }
@@ -201,14 +205,15 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param body body entities.UserSendEmailModel true "user email and role"
+// @Param body body entities.SendEmailModel true "user email and role"
 // @Success 200 {object} entities.ResponseMessage "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/password/email [post]
+// @Security
 func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
-	bodyData := entities.UserSendEmailModel{}
+	bodyData := entities.SendEmailModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
@@ -244,13 +249,14 @@ func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param token query string true "token from email"
-// @Param body body entities.UserPasswordModel true "user new password"
+// @Param body body entities.PasswordModel true "user new password"
 // @Success 200 {object} entities.ResponseMessage "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/password [post]
+// @Security BearerAuth
 func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
 	emailToken := ctx.Query("token")
 	token, err := middlewares.DecodeResetPasswordJWTToken(emailToken)
@@ -258,7 +264,7 @@ func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	bodyData := entities.UserPasswordModel{}
+	bodyData := entities.PasswordModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
