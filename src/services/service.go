@@ -16,6 +16,8 @@ type IServiceService interface {
 	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
+	FindServicesByOwnerID(ownerID string) ([]*entities.ServiceModel, error) 
+    FindAllServices() ([]*entities.ServiceModel, error) 
 }
 
 func NewServiceService(repo repositories.IServiceRepository) IServiceService {
@@ -39,4 +41,11 @@ func (s *ServiceService) DeleteServiceByID(serviceID string) (*entities.ServiceM
 
 func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceModel, error) {
 	return s.Repo.FindByID(serviceID)
+}
+
+func (s *ServiceService) FindServicesByOwnerID(ownerID string) ([]*entities.ServiceModel, error) {
+    return s.Repo.FindByOwnerID(ownerID)
+}
+func (s *ServiceService) FindAllServices() ([]*entities.ServiceModel, error) {
+    return s.Repo.FindAll()
 }
