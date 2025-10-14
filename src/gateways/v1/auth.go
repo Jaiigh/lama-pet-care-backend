@@ -201,14 +201,14 @@ func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param body body entities.UserSendEmailModel true "user email and role"
+// @Param body body entities.SendEmailModel true "user email and role"
 // @Success 200 {object} entities.ResponseMessage "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /auth/password/email [post]
 func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
-	bodyData := entities.UserSendEmailModel{}
+	bodyData := entities.SendEmailModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
@@ -244,7 +244,7 @@ func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param token query string true "token from email"
-// @Param body body entities.UserPasswordModel true "user new password"
+// @Param body body entities.PasswordModel true "user new password"
 // @Success 200 {object} entities.ResponseMessage "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
@@ -258,7 +258,7 @@ func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	bodyData := entities.UserPasswordModel{}
+	bodyData := entities.PasswordModel{}
 	if err := ctx.BodyParser(&bodyData); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}

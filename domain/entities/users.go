@@ -25,12 +25,12 @@ type UserDataModel struct {
 	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
-type UserSendEmailModel struct {
+type SendEmailModel struct {
 	Email string  `json:"email" validate:"required,email"`
 	Role  db.Role `json:"role" validate:"required"`
 }
 
-type UserPasswordModel struct {
+type PasswordModel struct {
 	Password string `json:"password" validate:"required"`
 }
 

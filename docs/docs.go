@@ -165,7 +165,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.UserPasswordModel"
+                            "$ref": "#/definitions/entities.PasswordModel"
                         }
                     }
                 ],
@@ -223,7 +223,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.UserSendEmailModel"
+                            "$ref": "#/definitions/entities.SendEmailModel"
                         }
                     }
                 ],
@@ -791,6 +791,17 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.PasswordModel": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ResponseMessage": {
             "type": "object",
             "properties": {
@@ -808,6 +819,21 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "entities.SendEmailModel": {
+            "type": "object",
+            "required": [
+                "email",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/db.Role"
                 }
             }
         },
@@ -915,32 +941,6 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
-                }
-            }
-        },
-        "entities.UserPasswordModel": {
-            "type": "object",
-            "required": [
-                "password"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.UserSendEmailModel": {
-            "type": "object",
-            "required": [
-                "email",
-                "role"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "role": {
-                    "$ref": "#/definitions/db.Role"
                 }
             }
         }
