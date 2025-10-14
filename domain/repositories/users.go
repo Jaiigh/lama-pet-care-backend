@@ -234,3 +234,4 @@ func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
 		TotalSpending:   totalSpending,
 	}
 }
+
