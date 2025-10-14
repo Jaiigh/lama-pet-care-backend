@@ -15,13 +15,14 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	auth.Get("/token", middlewares.SetJWtHeaderHandler(), gateway.checkToken)
 	auth.Post("/register/:role", gateway.Register)
 	auth.Post("/login/:role", gateway.Login)
-	auth.Post("/admin", gateway.CreateAdmin)
+	auth.Post("/admin", middlewares.SetJWtHeaderHandler(), gateway.CreateAdmin)
 	auth.Post("/password/email", gateway.ForgotPassword)
-	auth.Post("/password", gateway.ResetPassword)
+	auth.Patch("/password", gateway.ResetPassword)
 
 	user := api.Group("/user", middlewares.SetJWtHeaderHandler())
 	user.Get("/", gateway.FindUserByID)
 	user.Patch("/", gateway.UpdateUserByID)
+	user.Patch("/profile", gateway.UpdateUserPicture)
 	user.Delete("/", gateway.DeleteUserByID)
 
 	services := api.Group("/services", middlewares.SetJWtHeaderHandler())

@@ -14,7 +14,6 @@ import (
 // @Tags service
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer <JWT token>"
 // @Param body body entities.CreateServiceRequest true "service data (admins must include owner_id)"
 // @Success 201 {object} entities.ResponseModel "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
@@ -73,7 +72,6 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 // @Tags service
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer <JWT token>"
 // @Param id path string true "Service ID"
 // @Success 200 {object} entities.ResponseMessage "Delete successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid service ID"

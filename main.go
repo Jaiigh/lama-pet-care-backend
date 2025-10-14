@@ -25,6 +25,7 @@ import (
 // @host lama-pet-care-backend-qbwz.onrender.com
 // @BasePath /api/v1
 // @Schemes https
+// @security BearerAuth
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization

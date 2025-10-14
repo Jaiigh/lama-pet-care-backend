@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/auth/admin": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "create new admin user",
                 "consumes": [
                     "application/json"
@@ -52,6 +57,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
                     "422": {
                         "description": "Validation error",
                         "schema": {
@@ -69,6 +80,7 @@ const docTemplate = `{
         },
         "/auth/login/{role}": {
             "post": {
+                "security": [],
                 "description": "Login user",
                 "consumes": [
                     "application/json"
@@ -140,6 +152,11 @@ const docTemplate = `{
         },
         "/auth/password": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "reset password with token from email",
                 "consumes": [
                     "application/json"
@@ -205,6 +222,7 @@ const docTemplate = `{
         },
         "/auth/password/email": {
             "post": {
+                "security": [],
                 "description": "forgot password and send reset link to email",
                 "consumes": [
                     "application/json"
@@ -257,6 +275,7 @@ const docTemplate = `{
         },
         "/auth/register/{role}": {
             "post": {
+                "security": [],
                 "description": "Register new user except admin",
                 "consumes": [
                     "application/json"
@@ -335,15 +354,6 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Check JWT token validity",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Token is valid",
@@ -385,13 +395,6 @@ const docTemplate = `{
                 ],
                 "summary": "create service booking",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "service data (admins must include owner_id)",
                         "name": "body",
@@ -463,13 +466,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Service ID",
                         "name": "id",
                         "in": "path",
@@ -531,15 +527,6 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "find user by id",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Request successful",
@@ -549,12 +536,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorization Token.",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Invalid role",
                         "schema": {
                             "type": "string"
                         }
@@ -581,15 +562,6 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "delete user by id",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Request successful",
@@ -599,12 +571,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorization Token.",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Invalid role",
                         "schema": {
                             "type": "string"
                         }
@@ -624,6 +590,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "delete user by id and role from JWT token",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -632,13 +601,6 @@ const docTemplate = `{
                 ],
                 "summary": "delete user by id",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "update user data",
                         "name": "body",
@@ -668,16 +630,65 @@ const docTemplate = `{
                             "type": "string"
                         }
                     },
-                    "403": {
-                        "description": "Invalid role",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/profile": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update user picture by id and role from JWT token",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "update user picture",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "user profile picture",
+                        "name": "profile",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.UserDataModel"
+                        }
+                    },
+                    "400": {
+                        "description": "picture file is required",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/entities.ResponseErrorMessage"
                         }
                     }
                 }
@@ -802,6 +813,14 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.ResponseErrorMessage": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ResponseMessage": {
             "type": "object",
             "properties": {
@@ -863,6 +882,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
+                "profile": {
+                    "type": "string"
+                },
                 "rating": {
                     "description": "caretaker only",
                     "type": "number"
@@ -915,6 +937,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
+                "profile": {
+                    "type": "string"
+                },
                 "rating": {
                     "type": "number"
                 },
@@ -952,7 +977,12 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header"
         }
-    }
+    },
+    "security": [
+        {
+            "BearerAuth": []
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
