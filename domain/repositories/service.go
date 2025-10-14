@@ -19,6 +19,8 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
+	FindByOwnerID(ownerID string) ([]*entities.ServiceModel, error) 
+    FindAll() ([]*entities.ServiceModel, error) 
 }
 
 func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
@@ -121,4 +123,29 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 		Status:      model.Status,
 		ReserveDate: model.Rdate,
 	}
+}
+func (repo *serviceRepository) FindByOwnerID(ownerID string) ([]*entities.ServiceModel, error) {
+    services, err := repo.Collection.Service.FindMany(
+        db.Service.Oid.Equals(ownerID),
+    ).Exec(repo.Context)
+    if err != nil {
+        return nil, err
+    }
+    var result []*entities.ServiceModel
+    for _, s := range services {
+        result = append(result, mapServiceModel(&s))
+    }
+    return result, nil
+}
+
+func (repo *serviceRepository) FindAll() ([]*entities.ServiceModel, error) {
+    services, err := repo.Collection.Service.FindMany().Exec(repo.Context)
+    if err != nil {
+        return nil, err
+    }
+    var result []*entities.ServiceModel
+    for _, s := range services {
+        result = append(result, mapServiceModel(&s))
+    }
+    return result, nil
 }

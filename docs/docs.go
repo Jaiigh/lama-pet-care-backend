@@ -377,6 +377,50 @@ const docTemplate = `{
             }
         },
         "/services/": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get all services for the authenticated user (owner)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "get all services of current user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cJWT token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
