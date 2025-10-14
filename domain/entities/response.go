@@ -4,6 +4,10 @@ type ResponseMessage struct {
 	Message string `json:"message"`
 }
 
+type ResponseErrorMessage struct {
+	Error string `json:"message"`
+}
+
 type ResponseModel struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
