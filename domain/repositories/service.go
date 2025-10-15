@@ -19,8 +19,8 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
-	FindByOwnerID(ownerID string) ([]*entities.ServiceModel, error) 
-    FindAll() ([]*entities.ServiceModel, error) 
+	FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
+    FindAll(status string) ([]*entities.ServiceModel, error)
 }
 
 func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
@@ -124,10 +124,33 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 		ReserveDate: model.Rdate,
 	}
 }
-func (repo *serviceRepository) FindByOwnerID(ownerID string) ([]*entities.ServiceModel, error) {
-    services, err := repo.Collection.Service.FindMany(
+
+func toServiceStatus(s string) (db.ServiceStatus, bool) {
+	switch s {
+	case "wait":
+		return db.ServiceStatusWait, true
+	case "ongoing":
+		return db.ServiceStatusOngoing, true
+	case "finish":
+		return db.ServiceStatusFinish, true
+	default:
+		return "", false // Return an empty value and false if the string is not a valid status
+	}
+}
+
+func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
+	params := []db.ServiceWhereParam{
         db.Service.Oid.Equals(ownerID),
-    ).Exec(repo.Context)
+    }
+	if status != "" && status != "all" {
+        
+		if serviceStatus, ok := toServiceStatus(status); ok {
+            
+            params = append(params, db.Service.Status.Equals(serviceStatus))
+        }
+    }
+	services, err := repo.Collection.Service.FindMany(params...).Exec(repo.Context)
+    
     if err != nil {
         return nil, err
     }
@@ -138,8 +161,17 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string) ([]*entities.Servic
     return result, nil
 }
 
-func (repo *serviceRepository) FindAll() ([]*entities.ServiceModel, error) {
-    services, err := repo.Collection.Service.FindMany().Exec(repo.Context)
+func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel, error) {
+	 params := []db.ServiceWhereParam{}
+
+    
+    if status != "" && status != "all" {
+        if serviceStatus, ok := toServiceStatus(status); ok {
+            params = append(params, db.Service.Status.Equals(serviceStatus))
+        }
+    }
+    
+	services, err := repo.Collection.Service.FindMany(params...).Exec(repo.Context)
     if err != nil {
         return nil, err
     }

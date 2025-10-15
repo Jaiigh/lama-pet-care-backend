@@ -137,27 +137,30 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 	})
 }
 
-// @Summary get all services of current user
-// @Description get all services for the authenticated user (owner)
-// @Tags service
-// @Produce json
-// @Param Authorization header string true "Bearer <JWT token>"
-// @Success 200 {object} entities.ResponseModel "Request successful"
-// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
-// @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/ [get]
-// @Security BearerAuth
+// @Summary      Get services
+// @Description  Get all services for the authenticated user. Admins can see all services. Can be filtered by status.
+// @Tags         service
+// @Produce      json
+// @Security     BearerAuth
+// @Param        Authorization header string true "Bearer <JWT token>"
+// @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)"
+// @Success      200 {object} entities.ResponseModel "Request successful"
+// @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure      500 {object} entities.ResponseMessage "Internal server error"
+// @Router       /services [get]
 func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
     token, err := middlewares.DecodeJWTToken(ctx)
     if err != nil {
         return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
     }
-
+	statusFilter := ctx.Query("status")
     var services []*entities.ServiceModel
     if token.Role == "admin" {
-        services, err = h.ServiceService.FindAllServices()
+        
+		services, err = h.ServiceService.FindAllServices(statusFilter)
     } else {
-        services, err = h.ServiceService.FindServicesByOwnerID(token.UserID)
+        
+		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter)
     }
 	
 

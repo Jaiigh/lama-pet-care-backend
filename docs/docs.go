@@ -366,21 +366,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/services/": {
+        "/services": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all services for the authenticated user (owner)",
+                "description": "Get all services for the authenticated user. Admins can see all services. Can be filtered by status.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "service"
                 ],
-                "summary": "get all services of current user",
+                "summary": "Get services",
                 "parameters": [
                     {
                         "type": "string",
@@ -388,6 +388,12 @@ const docTemplate = `{
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter services by status (e.g. all, wait, ongoing, finish)",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -410,7 +416,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/services/": {
             "post": {
                 "security": [
                     {
