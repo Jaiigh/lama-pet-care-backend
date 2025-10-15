@@ -1,5 +1,5 @@
 # lama-backend
-swagger url: https://lama-pet-care-backend-qbwz.onrender.com/swagger/index.html
+swagger url: https://lama-pet-care-backend-dev.onrender.com/swagger/index.html
 # Set Environment `.env`
 ```
 DATABASE_URL="<transaction_pooler>?pgbouncer=true&connect_timeout=10"
@@ -12,6 +12,9 @@ JWT_REFESH_SECRET_KEY=Test
 FORGET_PASSWORD_LINK=<resetpassword page url>
 SMTP_USER=<sender email>
 SMTP_PASS=<sender smtp pass>
+
+SUPABASE_URL=https://rcbpuiqwucaxxubsjnbx.supabase.co
+SUPABASE_KEY=<supabase api key>
 ```
 # Install dependencies
 ```
@@ -38,7 +41,7 @@ go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/s
 go mod tidy
 ```
 # Swagger
-swagger url: https://lama-pet-care-backend-qbwz.onrender.com/swagger/index.html
+swagger url: https://lama-pet-care-backend-dev.onrender.com/swagger/index.html
 
 update swagger
 ```

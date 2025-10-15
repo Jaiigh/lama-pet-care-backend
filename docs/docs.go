@@ -1032,7 +1032,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "lama-pet-care-backend-qbwz.onrender.com",
+	Host:             "lama-pet-care-backend-dev.onrender.com",
 	BasePath:         "/api/v1",
 	Schemes:          []string{"https"},
 	Title:            "LAMA Backend API",
