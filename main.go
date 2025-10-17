@@ -19,16 +19,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-/*
-// @host lama-pet-care-backend-dev.onrender.com
-// @Schemes https
-*/
 // @title LAMA Backend API
 // @version 1.0
 // @description this is a backend REST API server for LAMA project
-// @host 127.0.0.1:8080
+// @host lama-pet-care-backend-dev.onrender.com
 // @BasePath /api/v1
-// @Schemes http
+// @Schemes https
 // @security BearerAuth
 // @securityDefinitions.apikey BearerAuth
 // @in header
