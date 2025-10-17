@@ -21,6 +21,7 @@ type IServiceRepository interface {
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
 	FindAll(status string) ([]*entities.ServiceModel, error)
+	UpdateStatus(serviceID, status string) error
 }
 
 func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
@@ -171,6 +172,28 @@ func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel,
 		result = append(result, mapServiceModel(&services[i]))
 	}
 	return result, nil
+}
+
+func (repo *serviceRepository) UpdateStatus(serviceID, status string) error {
+	serviceStatus, ok := toServiceStatus(status)
+	if !ok {
+		return fmt.Errorf("service -> UpdateStatus: invalid status value")
+	}
+
+	updateStatus, err := repo.Collection.Service.FindUnique(
+		db.Service.Sid.Equals(serviceID),
+	).Update(
+		db.Service.Status.Set(serviceStatus),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return fmt.Errorf("service -> UpdateStatus: %v", err)
+	}
+	if updateStatus == nil {
+		return fmt.Errorf("service -> UpdateStatus: service not found")
+	}
+
+	return nil
 }
 
 func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {

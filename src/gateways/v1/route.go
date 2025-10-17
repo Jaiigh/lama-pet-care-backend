@@ -30,4 +30,5 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	services.Get("/", gateway.GetMyServices)
 	services.Patch("/:serviceID", gateway.UpdateService)
 	services.Delete("/:serviceID", gateway.DeleteService)
+	services.Patch("/:serviceID/:status", gateway.UpdateStatusService)
 }

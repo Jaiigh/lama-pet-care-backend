@@ -24,6 +24,7 @@ type IServiceService interface {
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServicesByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
 	FindAllServices(status string) ([]*entities.ServiceModel, error)
+	UpdateStatus(serviceID, status, role, userID string) error
 }
 
 func NewServiceService(
@@ -157,6 +158,39 @@ func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string) ([
 }
 func (s *ServiceService) FindAllServices(status string) ([]*entities.ServiceModel, error) {
 	return s.Repo.FindAll(status)
+}
+
+func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) error {
+	service, err := s.Repo.FindByID(serviceID)
+	if err != nil {
+		return fmt.Errorf("service -> UpdateStatus: %w", err)
+	}
+
+	switch role {
+	case "admin":
+		// Admin can update any service
+	case "owner":
+		if service.OwnerID != userID {
+			return fmt.Errorf("service -> UpdateStatus: owner can only update their own services")
+		}
+	case "caretaker":
+		if service.ServiceType != "cservice" {
+			return fmt.Errorf("service -> UpdateStatus: caretaker can only update cservice")
+		}
+		if service.StaffID != userID {
+			return fmt.Errorf("service -> UpdateStatus: caretaker can only update their own services")
+		}
+	case "doctor":
+		if service.ServiceType != "mservice" {
+			return fmt.Errorf("service -> UpdateStatus: doctor can only update mservice")
+		}
+		if service.StaffID != userID {
+			return fmt.Errorf("service -> UpdateStatus: doctor can only update their own services")
+		}
+	default:
+		return fmt.Errorf("service -> UpdateStatus: invalid role %q", role)
+	}
+	return s.Repo.UpdateStatus(serviceID, status)
 }
 
 func mapToSubService(service entities.ServiceModel) *entities.SubService {

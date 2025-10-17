@@ -264,7 +264,6 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 // @Tags         service
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization header string true "Bearer <JWT token>"
 // @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)" [optional default: all]
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
@@ -290,5 +289,60 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 		Message: "success",
 		Data:    services,
 		Status:  fiber.StatusOK,
+	})
+}
+
+// @Summary Update service status
+// @Description Update the status of a service booking. Allowed roles: admin, owner, caretaker, doctor.
+// @Tags service
+// @Produce json
+// @Param serviceID path string true "Service ID"
+// @Param status path string true "service status (wait, ongoing, finish)" Enums(wait, ongoing, finish)
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid request"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 404 {object} entities.ResponseMessage "Service not found"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /services/{serviceID}/{status} [patch]
+// @Security BearerAuth
+func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" && token.Role != "owner" && token.Role != "caretaker" && token.Role != "doctor" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	serviceID := ctx.Params("serviceID")
+	if serviceID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid service ID"})
+	}
+	status := ctx.Params("status")
+	if status != "wait" && status != "ongoing" && status != "finish" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid status"})
+	}
+
+	err = h.ServiceService.UpdateStatus(serviceID, status, token.Role, token.UserID)
+	if err != nil {
+		switch {
+		case errors.Is(err, db.ErrNotFound):
+			return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "service not found"})
+		case strings.Contains(strings.ToLower(err.Error()), "invalid"),
+			strings.Contains(strings.ToLower(err.Error()), "required"):
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: err.Error()})
+		default:
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "status updated successfully",
+		Data: fiber.Map{
+			"service_id": serviceID,
+			"status":     status,
+		},
+		Status: fiber.StatusOK,
 	})
 }

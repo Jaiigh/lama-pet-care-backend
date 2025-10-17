@@ -394,13 +394,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Filter services by status (e.g. all, wait, ongoing, finish)",
                         "name": "status",
                         "in": "query"
@@ -629,6 +622,82 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/services/{serviceID}/{status}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the status of a service booking. Allowed roles: admin, owner, caretaker, doctor.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Update service status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service ID",
+                        "name": "serviceID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "wait",
+                            "ongoing",
+                            "finish"
+                        ],
+                        "type": "string",
+                        "description": "service status (wait, ongoing, finish)",
+                        "name": "status",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
