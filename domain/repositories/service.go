@@ -146,9 +146,6 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	if data.PetID != nil {
 		updates = append(updates, db.Service.Pet.Link(db.Pet.Petid.Equals(*data.PetID)))
 	}
-	if data.PaymentID != nil {
-		updates = append(updates, db.Service.Payment.Link(db.Payment.Payid.Equals(*data.PaymentID)))
-	}
 
 	if len(updates) > 0 {
 		if _, err := repo.Collection.Service.FindUnique(

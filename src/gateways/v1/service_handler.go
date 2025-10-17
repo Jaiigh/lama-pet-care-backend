@@ -40,6 +40,9 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
+	if err := validator.New().Struct(req); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
+	}
 
 	// default to token.UserID, but admins must supply the owner to assign
 	switch token.Role {
@@ -164,7 +167,6 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 
 	if req.OwnerID == nil &&
 		req.PetID == nil &&
-		req.PaymentID == nil &&
 		req.Price == nil &&
 		req.Status == nil &&
 		req.ReserveDate == nil &&
@@ -288,10 +290,8 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	statusFilter := ctx.Query("status")
 	var services []*entities.ServiceModel
 	if token.Role == "admin" {
-
 		services, err = h.ServiceService.FindAllServices(statusFilter)
 	} else {
-
 		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter)
 	}
 
