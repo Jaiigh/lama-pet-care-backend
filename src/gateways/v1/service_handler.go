@@ -274,7 +274,7 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        Authorization header string true "Bearer <JWT token>"
-// @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)"
+// @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)" [optional default: all]
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"

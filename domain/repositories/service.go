@@ -255,9 +255,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*
 		db.Service.Oid.Equals(ownerID),
 	}
 	if status != "" && status != "all" {
-
 		if serviceStatus, ok := toServiceStatus(status); ok {
-
 			params = append(params, db.Service.Status.Equals(serviceStatus))
 		}
 	}
