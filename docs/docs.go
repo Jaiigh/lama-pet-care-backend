@@ -426,16 +426,14 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/services/": {
+            },
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "owner creates their own booking; admins may create on behalf of an owner by providing owner_id in the payload",
+                "description": "Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields.",
                 "consumes": [
                     "application/json"
                 ],
@@ -445,10 +443,10 @@ const docTemplate = `{
                 "tags": [
                     "service"
                 ],
-                "summary": "create service booking",
+                "summary": "Create caretaker/medical service",
                 "parameters": [
                     {
-                        "description": "service data (admins must include owner_id)",
+                        "description": "service payload (admins must include owner_id; mservice requires disease, optional appoint_time)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -551,6 +549,86 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Service not found",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to ` + "`" + `cservice` + "`" + `, include ` + "`" + `staff_id` + "`" + ` for the caretaker and optionally ` + "`" + `comment` + "`" + `. When switching to ` + "`" + `mservice` + "`" + `, include doctor ` + "`" + `staff_id` + "`" + `, ` + "`" + `disease` + "`" + `, and optionally ` + "`" + `appoint_time` + "`" + `.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Update service booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service ID",
+                        "name": "serviceID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "service update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateServiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
@@ -771,9 +849,22 @@ const docTemplate = `{
                 "pet_id",
                 "price",
                 "reserve_date",
+                "service_type",
+                "staff_id",
                 "status"
             ],
             "properties": {
+                "appoint_time": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "disease": {
+                    "type": "string",
+                    "minLength": 1
+                },
                 "owner_id": {
                     "type": "string"
                 },
@@ -788,6 +879,16 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "reserve_date": {
+                    "type": "string"
+                },
+                "service_type": {
+                    "type": "string",
+                    "enum": [
+                        "mservice",
+                        "cservice"
+                    ]
+                },
+                "staff_id": {
                     "type": "string"
                 },
                 "status": {
@@ -905,6 +1006,56 @@ const docTemplate = `{
                 },
                 "role": {
                     "$ref": "#/definitions/db.Role"
+                }
+            }
+        },
+        "entities.UpdateServiceRequest": {
+            "type": "object",
+            "properties": {
+                "appoint_time": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "disease": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "payment_id": {
+                    "type": "string"
+                },
+                "pet_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "reserve_date": {
+                    "type": "string"
+                },
+                "service_type": {
+                    "type": "string",
+                    "enum": [
+                        "mservice",
+                        "cservice"
+                    ]
+                },
+                "staff_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "wait",
+                        "ongoing",
+                        "finish"
+                    ]
                 }
             }
         },
