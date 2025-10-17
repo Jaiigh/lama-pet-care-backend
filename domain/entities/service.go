@@ -38,7 +38,6 @@ type UpdateServiceRequest struct {
 	OwnerID     *string    `json:"owner_id,omitempty" validate:"omitempty,uuid4"`
 	PetID       *string    `json:"pet_id,omitempty" validate:"omitempty,uuid4"`
 	StaffID     *string    `json:"staff_id,omitempty" validate:"omitempty,uuid4"`
-	ServiceType *string    `json:"service_type,omitempty" validate:"omitempty,oneof=mservice cservice"`
 	Price       *int       `json:"price,omitempty" validate:"omitempty,gte=0"`
 	Status      *string    `json:"status,omitempty" validate:"omitempty,oneof=wait ongoing finish"`
 	ReserveDate *time.Time `json:"reserve_date,omitempty"`

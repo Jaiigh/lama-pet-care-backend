@@ -105,16 +105,8 @@ func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.Updat
 		return nil, err
 	}
 
-	if data.ServiceType == nil {
-		data.ServiceType = &currentService.ServiceType
-	} else {
-		if *data.ServiceType != currentService.ServiceType {
-			return nil, fmt.Errorf("service -> UpdateServiceByID: cannot change service_type from %q to %q", currentService.ServiceType, *data.ServiceType)
-		}
-	}
-
 	var result *entities.ServiceModel
-	switch *data.ServiceType {
+	switch currentService.ServiceType {
 	case "cservice":
 		if data.StaffID != nil {
 			if _, err := s.CaretakerRepo.FindByID(*data.StaffID); err != nil {
