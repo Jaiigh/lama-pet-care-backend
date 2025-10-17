@@ -44,3 +44,11 @@ type UpdateServiceRequest struct {
 	Disease     *string    `json:"disease,omitempty" validate:"omitempty,min=1"`
 	Comment     *string    `json:"comment,omitempty" validate:"omitempty,min=1"`
 }
+
+type SubService struct {
+	ServiceID string  `json:"service_id"`
+	StaffID   string  `json:"staff_id"`
+	Disease   *string `json:"disease,omitempty"`
+	Comment   *string `json:"comment,omitempty"`
+	Score     *int    `json:"score,omitempty"`
+}
