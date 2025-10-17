@@ -845,7 +845,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "owner_id",
-                "payment_id",
                 "pet_id",
                 "price",
                 "reserve_date",
@@ -866,6 +865,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_id": {
+                    "description": "for backend don't require in request",
                     "type": "string"
                 },
                 "pet_id": {
@@ -1020,9 +1020,6 @@ const docTemplate = `{
                 "owner_id": {
                     "type": "string"
                 },
-                "payment_id": {
-                    "type": "string"
-                },
                 "pet_id": {
                     "type": "string"
                 },
@@ -1032,6 +1029,11 @@ const docTemplate = `{
                 },
                 "reserve_date": {
                     "type": "string"
+                },
+                "score": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "service_type": {
                     "type": "string",
@@ -1185,9 +1187,9 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "lama-pet-care-backend-dev.onrender.com",
+	Host:             "127.0.0.1:8080",
 	BasePath:         "/api/v1",
-	Schemes:          []string{"https"},
+	Schemes:          []string{"http"},
 	Title:            "LAMA Backend API",
 	Description:      "this is a backend REST API server for LAMA project",
 	InfoInstanceName: "swagger",

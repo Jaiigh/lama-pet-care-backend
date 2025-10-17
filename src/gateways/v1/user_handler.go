@@ -19,7 +19,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -48,7 +48,7 @@ func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -80,7 +80,7 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -115,7 +115,7 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 

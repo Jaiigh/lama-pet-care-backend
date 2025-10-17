@@ -29,7 +29,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if token.Role != "owner" && token.Role != "admin" {
@@ -120,7 +120,7 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if token.Role != "admin" {
@@ -217,7 +217,7 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 	// Decode JWT token
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{
 			Message: "Unauthorized token",
 		})
@@ -281,7 +281,7 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 // @Router       /services [get]
 func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	statusFilter := ctx.Query("status")

@@ -23,7 +23,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if err := h.AuthService.CheckToken(token); err != nil {
@@ -86,7 +86,7 @@ func (h *HTTPGateway) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot insert new user account: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
+	token, err := middlewares.GenerateJWTToken(userData.UserID, role, "access")
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
 			Message: "Failed to generate token",
@@ -134,7 +134,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "cannot login user: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateJWTToken(userData.UserID, role)
+	token, err := middlewares.GenerateJWTToken(userData.UserID, role, "access")
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
 			Message: "Failed to generate token",
@@ -163,7 +163,7 @@ func (h *HTTPGateway) Login(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) CreateAdmin(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if token.Role != "admin" {
@@ -226,7 +226,7 @@ func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot send reset password mail: " + err.Error()})
 	}
 
-	token, err := middlewares.GenerateResetPasswordJWTToken(userID, string(bodyData.Role))
+	token, err := middlewares.GenerateResetPasswordJWTToken(userID, string(bodyData.Role), "reset_password")
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
 			Message: "Failed to generate token",
