@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -103,8 +104,14 @@ func (repo *paymentRepository) UpdateByID(data entities.PaymentModel) (*entities
 }
 
 func mapToPaymentModel(model *db.PaymentModel) *entities.PaymentModel {
-	paymentType, _ := model.Type()
-	payDate, _ := model.PayDate()
+	paymentType, ok := model.Type()
+	if !ok {
+		paymentType = ""
+	}
+	payDate, ok := model.PayDate()
+	if !ok {
+		payDate = time.Time{}
+	}
 
 	return &entities.PaymentModel{
 		PayID:   model.Payid,

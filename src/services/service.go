@@ -53,12 +53,16 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	}
 
 	var result *entities.ServiceModel
-	var err error
 	switch data.ServiceType {
 	case "cservice":
 		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: caretaker not found: %w", err)
 		}
+		payment, err := s.PaymentRepo.InsertPayment(data.OwnerID)
+		if err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create payment: %w", err)
+		}
+		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
@@ -69,6 +73,11 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: doctor not found: %w", err)
 		}
+		payment, err := s.PaymentRepo.InsertPayment(data.OwnerID)
+		if err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create payment: %w", err)
+		}
+		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
@@ -78,7 +87,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	default:
 		return nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
 	}
-
 	return result, nil
 }
 

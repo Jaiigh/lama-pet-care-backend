@@ -32,15 +32,13 @@ func NewCServiceRepository(db *ds.PrismaDB) ICServiceRepository {
 
 func (repo *cserviceRepository) Insert(data entities.SubService) (*entities.SubService, error) {
 	createdCService, err := repo.Collection.Cservice.CreateOne(
-		db.Cservice.Score.Set(*data.Score),
+		db.Cservice.Score.Set(0),
 		db.Cservice.Caretaker.Link(db.Caretaker.UserID.Equals(data.StaffID)),
 		db.Cservice.Service.Link(db.Service.Sid.Equals(data.ServiceID)),
-		db.Cservice.Comment.Set(*data.Comment),
 	).Exec(repo.Context)
 	if err != nil {
 		return nil, fmt.Errorf("cservice -> Insert: %w", err)
 	}
-
 	return mapCserviceToSubService(createdCService), nil
 }
 
@@ -128,8 +126,10 @@ func (repo *cserviceRepository) FindAll() ([]*entities.SubService, error) {
 }
 
 func mapCserviceToSubService(model *db.CserviceModel) *entities.SubService {
-	comment, _ := model.Comment()
-
+	comment, ok := model.Comment()
+	if !ok {
+		comment = ""
+	}
 	return &entities.SubService{
 		ServiceID: model.Sid,
 		StaffID:   model.Cid,
