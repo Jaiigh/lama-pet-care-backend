@@ -23,7 +23,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) checkToken(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil || token.Purpose != "access" {
+	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if err := h.AuthService.CheckToken(token); err != nil {
