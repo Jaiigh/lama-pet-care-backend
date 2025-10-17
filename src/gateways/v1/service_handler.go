@@ -18,7 +18,7 @@ import (
 // @Tags service
 // @Accept json
 // @Produce json
-// @Param body body entities.CreateServiceRequest true "service payload (admins must include owner_id; mservice requires disease, optional appoint_time)"
+// @Param body body entities.CreateServiceRequest true "service payload (admins must include owner_id; mservice requires disease)"
 // @Success 201 {object} entities.ResponseModel "Request successful"
 // @Failure 400 {object} entities.ResponseMessage "Invalid json body"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
@@ -103,7 +103,7 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 }
 
 // @Summary Update service booking
-// @Description Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to `cservice`, include `staff_id` for the caretaker and optionally `comment`. When switching to `mservice`, include doctor `staff_id`, `disease`, and optionally `appoint_time`.
+// @Description Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to `cservice`, include `staff_id` for the caretaker and optionally `comment`. When switching to `mservice`, include doctor `staff_id` และ `disease`.
 // @Tags service
 // @Accept json
 // @Produce json
@@ -171,7 +171,6 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 		req.ServiceType == nil &&
 		req.StaffID == nil &&
 		req.Disease == nil &&
-		req.AppointTime == nil &&
 		req.Comment == nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "no fields to update"})
 	}

@@ -446,7 +446,7 @@ const docTemplate = `{
                 "summary": "Create caretaker/medical service",
                 "parameters": [
                     {
-                        "description": "service payload (admins must include owner_id; mservice requires disease, optional appoint_time)",
+                        "description": "service payload (admins must include owner_id; mservice requires disease)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -567,7 +567,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to ` + "`" + `cservice` + "`" + `, include ` + "`" + `staff_id` + "`" + ` for the caretaker and optionally ` + "`" + `comment` + "`" + `. When switching to ` + "`" + `mservice` + "`" + `, include doctor ` + "`" + `staff_id` + "`" + `, ` + "`" + `disease` + "`" + `, and optionally ` + "`" + `appoint_time` + "`" + `.",
+                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to ` + "`" + `cservice` + "`" + `, include ` + "`" + `staff_id` + "`" + ` for the caretaker and optionally ` + "`" + `comment` + "`" + `. When switching to ` + "`" + `mservice` + "`" + `, include doctor ` + "`" + `staff_id` + "`" + ` และ ` + "`" + `disease` + "`" + `.",
                 "consumes": [
                     "application/json"
                 ],
@@ -854,9 +854,6 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
-                "appoint_time": {
-                    "type": "string"
-                },
                 "comment": {
                     "type": "string",
                     "minLength": 1
@@ -1012,9 +1009,6 @@ const docTemplate = `{
         "entities.UpdateServiceRequest": {
             "type": "object",
             "properties": {
-                "appoint_time": {
-                    "type": "string"
-                },
                 "comment": {
                     "type": "string",
                     "minLength": 1

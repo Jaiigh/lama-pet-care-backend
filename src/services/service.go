@@ -25,17 +25,16 @@ type IServiceService interface {
 }
 
 func NewServiceService(
-    repo repositories.IServiceRepository,
-    caretakerRepo repositories.ICaretakerRepository,
-    doctorRepo repositories.IDoctorRepository,
+	repo repositories.IServiceRepository,
+	caretakerRepo repositories.ICaretakerRepository,
+	doctorRepo repositories.IDoctorRepository,
 ) IServiceService {
-    return &ServiceService{
-        Repo:          repo,
-        CaretakerRepo: caretakerRepo,
-        DoctorRepo:    doctorRepo,
-    }
+	return &ServiceService{
+		Repo:          repo,
+		CaretakerRepo: caretakerRepo,
+		DoctorRepo:    doctorRepo,
+	}
 }
-
 
 func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
 	status := db.ServiceStatus(data.Status)
@@ -163,8 +162,8 @@ func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceMod
 }
 
 func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
-    return s.Repo.FindByOwnerID(ownerID, status)
+	return s.Repo.FindByOwnerID(ownerID, status)
 }
 func (s *ServiceService) FindAllServices(status string) ([]*entities.ServiceModel, error) {
-    return s.Repo.FindAll(status)
+	return s.Repo.FindAll(status)
 }

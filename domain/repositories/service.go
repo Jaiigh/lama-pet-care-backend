@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
@@ -22,7 +21,7 @@ type IServiceRepository interface {
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
-    FindAll(status string) ([]*entities.ServiceModel, error)
+	FindAll(status string) ([]*entities.ServiceModel, error)
 }
 
 func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
@@ -33,17 +32,17 @@ func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
 }
 
 func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
-    createdService, err := repo.Collection.Service.CreateOne(
-        db.Service.Price.Set(data.Price),
-        db.Service.Status.Set(db.ServiceStatus(data.Status)),
-        db.Service.Rdate.Set(data.ReserveDate),
-        db.Service.Owner.Link(db.Owner.UserID.Equals(data.OwnerID)),
-        db.Service.Payment.Link(db.Payment.Payid.Equals(data.PaymentID)),
-        db.Service.Pet.Link(db.Pet.Petid.Equals(data.PetID)),
-    ).Exec(repo.Context)
-    if err != nil {
-        return nil, fmt.Errorf("service -> Insert: %w", err)
-    }
+	createdService, err := repo.Collection.Service.CreateOne(
+		db.Service.Price.Set(data.Price),
+		db.Service.Status.Set(db.ServiceStatus(data.Status)),
+		db.Service.Rdate.Set(data.ReserveDate),
+		db.Service.Owner.Link(db.Owner.UserID.Equals(data.OwnerID)),
+		db.Service.Payment.Link(db.Payment.Payid.Equals(data.PaymentID)),
+		db.Service.Pet.Link(db.Pet.Petid.Equals(data.PetID)),
+	).Exec(repo.Context)
+	if err != nil {
+		return nil, fmt.Errorf("service -> Insert: %w", err)
+	}
 
 	switch data.ServiceType {
 	case "cservice":
@@ -53,7 +52,6 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 		}
 
 		if _, err := repo.Collection.Cservice.CreateOne(
-			db.Cservice.Date.Set(data.ReserveDate),
 			db.Cservice.Score.Set(0),
 			db.Cservice.Caretaker.Link(db.Caretaker.UserID.Equals(data.StaffID)),
 			db.Cservice.Service.Link(db.Service.Sid.Equals(createdService.Sid)),
@@ -66,17 +64,12 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 		if data.Disease == nil {
 			return nil, fmt.Errorf("service -> Insert mservice: disease is required")
 		}
-		appointTime := data.ReserveDate
-		if data.AppointTime != nil {
-			appointTime = *data.AppointTime
-		}
 
 		optional := []db.MserviceSetParam{
 			db.Mservice.Doctor.Link(db.Doctor.UserID.Equals(data.StaffID)),
 		}
 
 		if _, err := repo.Collection.Mservice.CreateOne(
-			db.Mservice.AppointTime.Set(appointTime),
 			db.Mservice.Disease.Set(*data.Disease),
 			db.Mservice.Service.Link(db.Service.Sid.Equals(createdService.Sid)),
 			optional...,
@@ -88,16 +81,13 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 		return nil, fmt.Errorf("service -> Insert: unsupported service_type %q", data.ServiceType)
 	}
 
-    result := mapServiceModel(createdService)
-    result.ServiceType = data.ServiceType
-    result.StaffID = data.StaffID
-    result.Disease = data.Disease
-    if data.AppointTime != nil {
-        result.AppointTime = data.AppointTime
-    }
-    result.Comment = data.Comment
+	result := mapServiceModel(createdService)
+	result.ServiceType = data.ServiceType
+	result.StaffID = data.StaffID
+	result.Disease = data.Disease
+	result.Comment = data.Comment
 
-    return result, nil
+	return result, nil
 }
 
 func (repo *serviceRepository) FindByID(serviceID string) (*entities.ServiceModel, error) {
@@ -203,18 +193,12 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 					return nil, fmt.Errorf("service -> UpdateByID: staff_id required when switching to cservice")
 				}
 
-				date := serviceRecord.Rdate
-				if data.ReserveDate != nil {
-					date = *data.ReserveDate
-				}
-
 				optional := []db.CserviceSetParam{}
 				if data.Comment != nil {
 					optional = append(optional, db.Cservice.Comment.SetOptional((*db.String)(data.Comment)))
 				}
 
 				if _, err := repo.Collection.Cservice.CreateOne(
-					db.Cservice.Date.Set(date),
 					db.Cservice.Score.Set(0),
 					db.Cservice.Caretaker.Link(db.Caretaker.UserID.Equals(*data.StaffID)),
 					db.Cservice.Service.Link(db.Service.Sid.Equals(serviceID)),
@@ -229,9 +213,6 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 			cUpdates := []db.CserviceSetParam{}
 			if data.StaffID != nil {
 				cUpdates = append(cUpdates, db.Cservice.Caretaker.Link(db.Caretaker.UserID.Equals(*data.StaffID)))
-			}
-			if data.ReserveDate != nil {
-				cUpdates = append(cUpdates, db.Cservice.Date.Set(*data.ReserveDate))
 			}
 			if data.Comment != nil {
 				cUpdates = append(cUpdates, db.Cservice.Comment.SetOptional((*db.String)(data.Comment)))
@@ -262,15 +243,7 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 					return nil, fmt.Errorf("service -> UpdateByID: staff_id and disease required when switching to mservice")
 				}
 
-				appoint := serviceRecord.Rdate
-				if data.AppointTime != nil {
-					appoint = *data.AppointTime
-				} else if data.ReserveDate != nil {
-					appoint = *data.ReserveDate
-				}
-
 				if _, err := repo.Collection.Mservice.CreateOne(
-					db.Mservice.AppointTime.Set(appoint),
 					db.Mservice.Disease.Set(*data.Disease),
 					db.Mservice.Service.Link(db.Service.Sid.Equals(serviceID)),
 					db.Mservice.Doctor.Link(db.Doctor.UserID.Equals(*data.StaffID)),
@@ -287,11 +260,6 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 			}
 			if data.Disease != nil {
 				mUpdates = append(mUpdates, db.Mservice.Disease.Set(*data.Disease))
-			}
-			if data.AppointTime != nil {
-				mUpdates = append(mUpdates, db.Mservice.AppointTime.Set(*data.AppointTime))
-			} else if data.ReserveDate != nil {
-				mUpdates = append(mUpdates, db.Mservice.AppointTime.Set(*data.ReserveDate))
 			}
 			if len(mUpdates) > 0 {
 				if _, err := repo.Collection.Mservice.FindUnique(
@@ -347,8 +315,6 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 		}
 		disease := mservice.Disease
 		result.Disease = &disease
-		appoint := time.Time(mservice.AppointTime)
-		result.AppointTime = &appoint
 	}
 
 	return result
@@ -369,24 +335,24 @@ func toServiceStatus(s string) (db.ServiceStatus, bool) {
 
 func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
-        db.Service.Oid.Equals(ownerID),
-    }
+		db.Service.Oid.Equals(ownerID),
+	}
 	if status != "" && status != "all" {
-        
+
 		if serviceStatus, ok := toServiceStatus(status); ok {
-            
-            params = append(params, db.Service.Status.Equals(serviceStatus))
-        }
-    }
+
+			params = append(params, db.Service.Status.Equals(serviceStatus))
+		}
+	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).Exec(repo.Context)
-    
-    if err != nil {
-        return nil, err
-    }
-    var result []*entities.ServiceModel
+
+	if err != nil {
+		return nil, err
+	}
+	var result []*entities.ServiceModel
 	for i := range services {
 		result = append(result, mapServiceModel(&services[i]))
 	}
@@ -394,23 +360,22 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*
 }
 
 func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel, error) {
-	 params := []db.ServiceWhereParam{}
+	params := []db.ServiceWhereParam{}
 
-    
-    if status != "" && status != "all" {
-        if serviceStatus, ok := toServiceStatus(status); ok {
-            params = append(params, db.Service.Status.Equals(serviceStatus))
-        }
-    }
-    
+	if status != "" && status != "all" {
+		if serviceStatus, ok := toServiceStatus(status); ok {
+			params = append(params, db.Service.Status.Equals(serviceStatus))
+		}
+	}
+
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).Exec(repo.Context)
-    if err != nil {
-        return nil, err
-    }
-    var result []*entities.ServiceModel
+	if err != nil {
+		return nil, err
+	}
+	var result []*entities.ServiceModel
 	for i := range services {
 		result = append(result, mapServiceModel(&services[i]))
 	}
