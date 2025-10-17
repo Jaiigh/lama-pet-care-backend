@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"strings"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -98,66 +97,45 @@ func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.Updat
 		return nil, err
 	}
 
-	var targetType string
-	if data.ServiceType != nil && strings.TrimSpace(*data.ServiceType) != "" {
-		serviceType := strings.ToLower(strings.TrimSpace(*data.ServiceType))
-		if serviceType != "cservice" && serviceType != "mservice" {
-			return nil, fmt.Errorf("service -> UpdateServiceByID: invalid service_type %q", *data.ServiceType)
-		}
-		data.ServiceType = &serviceType
-		targetType = serviceType
+	if data.ServiceType == nil {
+		data.ServiceType = &currentService.ServiceType
 	} else {
-		targetType = currentService.ServiceType
+		if *data.ServiceType != currentService.ServiceType {
+			return nil, fmt.Errorf("service -> UpdateServiceByID: cannot change service_type from %q to %q", currentService.ServiceType, *data.ServiceType)
+		}
 	}
 
-	switch targetType {
+	var result *entities.ServiceModel
+	switch *data.ServiceType {
 	case "cservice":
 		if data.StaffID != nil {
 			if _, err := s.CaretakerRepo.FindByID(*data.StaffID); err != nil {
 				return nil, fmt.Errorf("service -> UpdateServiceByID: caretaker not found: %w", err)
 			}
 		}
-		if currentService.ServiceType != "cservice" && data.StaffID == nil {
-			return nil, fmt.Errorf("service -> UpdateServiceByID: staff_id required when switching to cservice")
+		if result, err = s.Repo.UpdateByID(serviceID, data); err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
-		if data.Comment != nil {
-			trimmed := strings.TrimSpace(*data.Comment)
-			if trimmed == "" {
-				data.Comment = nil
-			} else {
-				data.Comment = &trimmed
-			}
+		if _, err = s.CserviceRepo.UpdateByID(*mapToSubService(*result)); err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
 		}
-
 	case "mservice":
 		if data.StaffID != nil {
 			if _, err := s.DoctorRepo.FindByID(*data.StaffID); err != nil {
 				return nil, fmt.Errorf("service -> UpdateServiceByID: doctor not found: %w", err)
 			}
 		}
-		if currentService.ServiceType != "mservice" {
-			if data.StaffID == nil {
-				return nil, fmt.Errorf("service -> UpdateServiceByID: staff_id required when switching to mservice")
-			}
-			if data.Disease == nil || strings.TrimSpace(*data.Disease) == "" {
-				return nil, fmt.Errorf("service -> UpdateServiceByID: disease required when switching to mservice")
-			}
+		if result, err = s.Repo.UpdateByID(serviceID, data); err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
-		if data.Disease != nil {
-			trimmed := strings.TrimSpace(*data.Disease)
-			if trimmed == "" {
-				return nil, fmt.Errorf("service -> UpdateServiceByID: disease cannot be empty")
-			}
-			data.Disease = &trimmed
+		if _, err = s.MserviceRepo.UpdateByID(*mapToSubService(*result)); err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
 		}
-
-	case "":
-		return nil, fmt.Errorf("service -> UpdateServiceByID: target service type is unknown")
 	default:
-		return nil, fmt.Errorf("service -> UpdateServiceByID: invalid target service type %q", targetType)
+		return nil, fmt.Errorf("service -> UpdateServiceByID: invalid target service type")
 	}
 
-	return s.Repo.UpdateByID(serviceID, data)
+	return result, nil
 }
 
 func (s *ServiceService) DeleteServiceByID(serviceID string) (*entities.ServiceModel, error) {

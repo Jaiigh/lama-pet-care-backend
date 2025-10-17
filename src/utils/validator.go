@@ -22,6 +22,10 @@ func FormatValidationError(err error) string {
 			return field + " must be one of: " + fe.Param()
 		case "min":
 			return field + " must be at least " + fe.Param()
+		case "gte":
+			return field + " must be greater than or equal to " + fe.Param()
+		case "lte":
+			return field + " must be less than or equal to " + fe.Param()
 		default:
 			return field + " failed validation: " + tag
 		}

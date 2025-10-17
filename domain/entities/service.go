@@ -44,6 +44,7 @@ type UpdateServiceRequest struct {
 	ReserveDate *time.Time `json:"reserve_date,omitempty"`
 	Disease     *string    `json:"disease,omitempty" validate:"omitempty,min=1"`
 	Comment     *string    `json:"comment,omitempty" validate:"omitempty,min=1"`
+	Score       *int       `json:"score,omitempty" validate:"omitempty,gte=1,lte=5"`
 }
 
 type SubService struct {
