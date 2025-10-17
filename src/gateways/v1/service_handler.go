@@ -40,9 +40,6 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
-	if err := validator.New().Struct(req); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
-	}
 
 	// default to token.UserID, but admins must supply the owner to assign
 	switch token.Role {

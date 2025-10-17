@@ -44,48 +44,12 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 		return nil, fmt.Errorf("service -> Insert: %w", err)
 	}
 
-	switch data.ServiceType {
-	case "cservice":
-		optional := []db.CserviceSetParam{}
-		if data.Comment != nil {
-			optional = append(optional, db.Cservice.Comment.Set(*data.Comment))
-		}
-
-		if _, err := repo.Collection.Cservice.CreateOne(
-			db.Cservice.Score.Set(0),
-			db.Cservice.Caretaker.Link(db.Caretaker.UserID.Equals(data.StaffID)),
-			db.Cservice.Service.Link(db.Service.Sid.Equals(createdService.Sid)),
-			optional...,
-		).Exec(repo.Context); err != nil {
-			return nil, fmt.Errorf("service -> Insert cservice: %w", err)
-		}
-
-	case "mservice":
-		if data.Disease == nil {
-			return nil, fmt.Errorf("service -> Insert mservice: disease is required")
-		}
-
-		optional := []db.MserviceSetParam{
-			db.Mservice.Doctor.Link(db.Doctor.UserID.Equals(data.StaffID)),
-		}
-
-		if _, err := repo.Collection.Mservice.CreateOne(
-			db.Mservice.Disease.Set(*data.Disease),
-			db.Mservice.Service.Link(db.Service.Sid.Equals(createdService.Sid)),
-			optional...,
-		).Exec(repo.Context); err != nil {
-			return nil, fmt.Errorf("service -> Insert mservice: %w", err)
-		}
-
-	default:
-		return nil, fmt.Errorf("service -> Insert: unsupported service_type %q", data.ServiceType)
-	}
-
 	result := mapServiceModel(createdService)
 	result.ServiceType = data.ServiceType
 	result.StaffID = data.StaffID
 	result.Disease = data.Disease
 	result.Comment = data.Comment
+	result.Score = nil
 
 	return result, nil
 }
@@ -286,50 +250,6 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	return mapServiceModel(updatedService), nil
 }
 
-func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
-	result := &entities.ServiceModel{
-		Sid:         model.Sid,
-		OwnerID:     model.Oid,
-		PetID:       model.Petid,
-		PaymentID:   model.Payid,
-		Price:       model.Price,
-		Status:      model.Status,
-		ReserveDate: model.Rdate,
-	}
-
-	if cservice, ok := model.Cservice(); ok && cservice != nil {
-		result.ServiceType = "cservice"
-		result.StaffID = cservice.Cid
-
-		if comment, ok := cservice.Comment(); ok {
-			commentStr := string(comment)
-			result.Comment = &commentStr
-		}
-	} else if mservice, ok := model.Mservice(); ok && mservice != nil {
-		result.ServiceType = "mservice"
-		if did, ok := mservice.Did(); ok {
-			result.StaffID = string(did)
-		}
-		disease := mservice.Disease
-		result.Disease = &disease
-	}
-
-	return result
-}
-
-func toServiceStatus(s string) (db.ServiceStatus, bool) {
-	switch s {
-	case "wait":
-		return db.ServiceStatusWait, true
-	case "ongoing":
-		return db.ServiceStatusOngoing, true
-	case "finish":
-		return db.ServiceStatusFinish, true
-	default:
-		return "", false // Return an empty value and false if the string is not a valid status
-	}
-}
-
 func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
@@ -377,4 +297,47 @@ func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel,
 		result = append(result, mapServiceModel(&services[i]))
 	}
 	return result, nil
+}
+
+func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
+	result := &entities.ServiceModel{
+		Sid:         model.Sid,
+		OwnerID:     model.Oid,
+		PetID:       model.Petid,
+		PaymentID:   model.Payid,
+		Price:       model.Price,
+		Status:      model.Status,
+		ReserveDate: model.Rdate,
+	}
+
+	if cservice, ok := model.Cservice(); ok {
+		result.ServiceType = "cservice"
+		result.StaffID = cservice.Cid
+
+		if comment, ok := cservice.Comment(); ok {
+			commentStr := string(comment)
+			result.Comment = &commentStr
+		}
+	} else if mservice, ok := model.Mservice(); ok {
+		result.ServiceType = "mservice"
+		if did, ok := mservice.Did(); ok {
+			result.StaffID = string(did)
+		}
+		result.Disease = &mservice.Disease
+	}
+
+	return result
+}
+
+func toServiceStatus(s string) (db.ServiceStatus, bool) {
+	switch s {
+	case "wait":
+		return db.ServiceStatusWait, true
+	case "ongoing":
+		return db.ServiceStatusOngoing, true
+	case "finish":
+		return db.ServiceStatusFinish, true
+	default:
+		return "", false // Return an empty value and false if the string is not a valid status
+	}
 }
