@@ -495,7 +495,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/services/{id}": {
+        "/services/{serviceID}": {
             "delete": {
                 "security": [
                     {
@@ -567,7 +567,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to ` + "`" + `cservice` + "`" + `, include ` + "`" + `staff_id` + "`" + ` for the caretaker and optionally ` + "`" + `comment` + "`" + `. When switching to ` + "`" + `mservice` + "`" + `, include doctor ` + "`" + `staff_id` + "`" + ` และ ` + "`" + `disease` + "`" + `.",
+                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change.",
                 "consumes": [
                     "application/json"
                 ],
@@ -844,7 +844,6 @@ const docTemplate = `{
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
-                "owner_id",
                 "pet_id",
                 "price",
                 "reserve_date",
@@ -1034,13 +1033,6 @@ const docTemplate = `{
                     "type": "integer",
                     "maximum": 5,
                     "minimum": 1
-                },
-                "service_type": {
-                    "type": "string",
-                    "enum": [
-                        "mservice",
-                        "cservice"
-                    ]
                 },
                 "staff_id": {
                     "type": "string"

@@ -77,23 +77,22 @@ func (repo *mserviceRepository) UpdateByID(data entities.SubService) (*entities.
 		updates = append(updates, db.Mservice.Disease.Set(*data.Disease))
 	}
 
-	if len(updates) == 0 {
-		return nil, fmt.Errorf("mservice -> UpdateByID: no fields to update")
+	if len(updates) > 0 {
+		// Execute update
+		updatedMService, err := repo.Collection.Mservice.FindUnique(
+			db.Mservice.Sid.Equals(data.ServiceID),
+		).Update(updates...).Exec(repo.Context)
+
+		if err != nil {
+			return nil, fmt.Errorf("mservice -> UpdateByID: %v", err)
+		}
+		if updatedMService == nil {
+			return nil, fmt.Errorf("mservice -> UpdateByID: mservice not found")
+		}
+		return mapMserviceToSubService(updatedMService), nil
 	}
 
-	// Execute update
-	updatedMService, err := repo.Collection.Mservice.FindUnique(
-		db.Mservice.Sid.Equals(data.ServiceID),
-	).Update(updates...).Exec(repo.Context)
-
-	if err != nil {
-		return nil, fmt.Errorf("mservice -> UpdateByID: %v", err)
-	}
-	if updatedMService == nil {
-		return nil, fmt.Errorf("mservice -> UpdateByID: mservice not found")
-	}
-
-	return mapMserviceToSubService(updatedMService), nil
+	return repo.FindByID(data.ServiceID)
 }
 
 func (repo *mserviceRepository) FindByDoctorID(doctorID string) ([]*entities.SubService, error) {

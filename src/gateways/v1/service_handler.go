@@ -116,7 +116,7 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 // @Failure 404 {object} entities.ResponseMessage "Service not found"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/{id} [patch]
+// @Router /services/{serviceID} [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
@@ -203,7 +203,7 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 404 {object} entities.ResponseMessage "Service not found"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/{id} [delete]
+// @Router /services/{serviceID} [delete]
 // @Security BearerAuth
 func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 	// Decode JWT token

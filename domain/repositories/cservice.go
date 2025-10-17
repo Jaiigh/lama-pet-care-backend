@@ -79,23 +79,22 @@ func (repo *cserviceRepository) UpdateByID(data entities.SubService) (*entities.
 		updates = append(updates, db.Cservice.Score.Set(*data.Score))
 	}
 
-	if len(updates) == 0 {
-		return nil, fmt.Errorf("cservice -> UpdateByID: no fields to update")
+	if len(updates) > 0 {
+		updatedCService, err := repo.Collection.Cservice.FindUnique(
+			db.Cservice.Sid.Equals(data.ServiceID),
+		).Update(updates...).Exec(repo.Context)
+
+		if err != nil {
+			return nil, fmt.Errorf("cservice -> UpdateByID: %v", err)
+		}
+		if updatedCService == nil {
+			return nil, fmt.Errorf("cservice -> UpdateByID: cservice not found")
+		}
+
+		return mapCserviceToSubService(updatedCService), nil
 	}
 
-	// Execute update
-	updatedCService, err := repo.Collection.Cservice.FindUnique(
-		db.Cservice.Sid.Equals(data.ServiceID),
-	).Update(updates...).Exec(repo.Context)
-
-	if err != nil {
-		return nil, fmt.Errorf("cservice -> UpdateByID: %v", err)
-	}
-	if updatedCService == nil {
-		return nil, fmt.Errorf("cservice -> UpdateByID: cservice not found")
-	}
-
-	return mapCserviceToSubService(updatedCService), nil
+	return repo.FindByID(data.ServiceID)
 }
 
 func (repo *cserviceRepository) FindByCaretakerID(caretakerID string) ([]*entities.SubService, error) {

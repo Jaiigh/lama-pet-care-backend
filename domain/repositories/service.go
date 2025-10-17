@@ -99,7 +99,7 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 		updates = append(updates, db.Service.Pet.Link(db.Pet.Petid.Equals(*data.PetID)))
 	}
 
-	if len(updates) > 0 {
+	if len(updates) == 0 {
 		return nil, fmt.Errorf("service -> UpdateByID: no fields to update")
 	}
 
@@ -115,7 +115,10 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	}
 
 	result := mapServiceModel(updatedService)
-	result.StaffID = *data.StaffID
+	if data.StaffID != nil {
+		tmpResult, _ := repo.FindByID(serviceID)
+		result.StaffID = tmpResult.StaffID
+	}
 	result.Disease = data.Disease
 	result.Comment = data.Comment
 	result.Score = data.Score

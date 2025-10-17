@@ -114,11 +114,14 @@ func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.Updat
 			}
 		}
 		if result, err = s.Repo.UpdateByID(serviceID, data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+			return nil, fmt.Errorf("service -> CreateService: failed to update service: %w", err)
 		}
-		if _, err = s.CserviceRepo.UpdateByID(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
+		subResult, err := s.CserviceRepo.UpdateByID(*mapToSubService(*result))
+		if err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to update cservice: %w", err)
 		}
+		result.ServiceType = "cservice"
+		result.StaffID = subResult.StaffID
 	case "mservice":
 		if data.StaffID != nil {
 			if _, err := s.DoctorRepo.FindByID(*data.StaffID); err != nil {
@@ -126,11 +129,14 @@ func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.Updat
 			}
 		}
 		if result, err = s.Repo.UpdateByID(serviceID, data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+			return nil, fmt.Errorf("service -> CreateService: failed to update service: %w", err)
 		}
-		if _, err = s.MserviceRepo.UpdateByID(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
+		subResult, err := s.MserviceRepo.UpdateByID(*mapToSubService(*result))
+		if err != nil {
+			return nil, fmt.Errorf("service -> CreateService: failed to update mservice: %w", err)
 		}
+		result.ServiceType = "mservice"
+		result.StaffID = subResult.StaffID
 	default:
 		return nil, fmt.Errorf("service -> UpdateServiceByID: invalid target service type")
 	}
