@@ -59,7 +59,7 @@ func main() {
 	ownerService := sv.NewOwnerService(ownerRepo)
 	doctorService := sv.NewDoctorService(doctorRepo)
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
-	serviceService := sv.NewServiceService(serviceRepo)
+	serviceService := sv.NewServiceService(serviceRepo, caretakerRepo, doctorRepo)
 
 	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService)
 

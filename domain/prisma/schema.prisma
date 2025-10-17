@@ -40,7 +40,6 @@ model Caretaker {
 }
 
 model Cservice {
-  date      DateTime  @db.Date
   score     Int
   comment   String?
   SID       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -71,13 +70,12 @@ model Medicine {
 }
 
 model Mservice {
-  appoint_time DateTime @db.Timestamp(6)
-  disease      String
-  SID          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  DID          String?  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  disease String
+  SID     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  DID     String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  Doctor       Doctor?  @relation(fields: [DID], references: [user_id], onDelete: Cascade)
-  Service      Service  @relation(fields: [SID], references: [SID], onDelete: Cascade)
+  Doctor  Doctor? @relation(fields: [DID], references: [user_id], onDelete: Cascade)
+  Service Service @relation(fields: [SID], references: [SID], onDelete: Cascade)
 }
 
 model Owner {
@@ -117,20 +115,20 @@ model Pet {
 }
 
 model Service {
-  price    Int
-  status   service_status
-  rdate    DateTime       @db.Date
-  SID      String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PETID    String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PAYID    String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  OID      String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  price  Int
+  status service_status
+  rdate  DateTime @db.Timestamptz(6)
+  SID    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PETID  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PAYID  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  OID    String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   Cservice Cservice?
   Medicine Medicine[]
   Mservice Mservice?
-  Owner    Owner          @relation(fields: [OID], references: [user_id], onDelete: Cascade)
-  Payment  Payment        @relation(fields: [PAYID], references: [PAYID], onDelete: Cascade)
-  Pet      Pet            @relation(fields: [PETID], references: [PETID], onDelete: Cascade)
+  Owner    Owner   @relation(fields: [OID], references: [user_id], onDelete: Cascade)
+  Payment  Payment @relation(fields: [PAYID], references: [PAYID], onDelete: Cascade)
+  Pet      Pet     @relation(fields: [PETID], references: [PETID], onDelete: Cascade)
 }
 
 enum payment_status {
