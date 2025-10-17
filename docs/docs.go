@@ -151,7 +151,7 @@ const docTemplate = `{
             }
         },
         "/auth/password": {
-            "post": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []

@@ -255,7 +255,7 @@ func (h *HTTPGateway) ForgotPassword(ctx *fiber.Ctx) error {
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /auth/password [post]
+// @Router /auth/password [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) ResetPassword(ctx *fiber.Ctx) error {
 	emailToken := ctx.Query("token")
