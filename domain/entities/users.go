@@ -59,11 +59,11 @@ type CreatedUserModel struct {
 }
 
 type UpdateUserModel struct {
-	Email           *string     `json:"email,omitempty"`
+	Email           *string     `json:"email,omitempty" validate:"omitempty,email"`
 	Password        *string     `json:"password,omitempty"`
 	Name            *string     `json:"name,omitempty"`
 	BirthDate       *time.Time  `json:"birth_date,omitempty"`
-	TelephoneNumber *string     `json:"telephone_number,omitempty"`
+	TelephoneNumber *string     `json:"telephone_number,omitempty" validate:"omitempty,len=10,numeric"`
 	Address         *string     `json:"address,omitempty"`
 	Profile         *string     `json:"profile,omitempty"`
 	LicenseNumber   *string     `json:"license_number,omitempty"`  // doctor only

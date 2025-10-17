@@ -5,6 +5,7 @@ import (
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -89,6 +90,9 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
+	}
+	if err := validator.New().Struct(updateData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
 	updatedUser, err := h.UsersService.UpdateUsersByID(token.UserID, updateData)
