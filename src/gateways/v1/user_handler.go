@@ -5,6 +5,7 @@ import (
 	"lama-backend/src/middlewares"
 	"lama-backend/src/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,7 +20,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -48,7 +49,7 @@ func (h *HTTPGateway) FindUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -80,7 +81,7 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
@@ -89,6 +90,9 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
+	}
+	if err := validator.New().Struct(updateData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
 	updatedUser, err := h.UsersService.UpdateUsersByID(token.UserID, updateData)
@@ -115,7 +119,7 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 

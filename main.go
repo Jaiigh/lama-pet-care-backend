@@ -53,13 +53,16 @@ func main() {
 	caretakerRepo := repo.NewCaretakerRepository(prismadb)
 	doctorRepo := repo.NewDoctorRepository(prismadb)
 	serviceRepo := repo.NewServiceRepository(prismadb)
+	mserviceRepo := repo.NewMServiceRepository(prismadb)
+	cserviceRepo := repo.NewCServiceRepository(prismadb)
+	paymentRepo := repo.NewPaymentRepository(prismadb)
 
 	authService := sv.NewAuthService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
 	usersService := sv.NewUsersService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
 	ownerService := sv.NewOwnerService(ownerRepo)
 	doctorService := sv.NewDoctorService(doctorRepo)
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
-	serviceService := sv.NewServiceService(serviceRepo, caretakerRepo, doctorRepo)
+	serviceService := sv.NewServiceService(serviceRepo, caretakerRepo, doctorRepo, mserviceRepo, cserviceRepo, paymentRepo)
 
 	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService)
 
