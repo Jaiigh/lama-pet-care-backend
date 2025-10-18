@@ -158,7 +158,7 @@ func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, pa
 		page = 1
 	}
 	if limit < 1 {
-		limit = 14
+		limit = 5
 	}
 	offset := (page - 1) * limit
 
@@ -169,7 +169,7 @@ func (s *ServiceService) FindAllServices(status string, page int, limit int) ([]
 		page = 1
 	}
 	if limit < 1 {
-		limit = 14
+		limit = 5
 	}
 	offset := (page - 1) * limit
 
