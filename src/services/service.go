@@ -169,10 +169,6 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 	switch role {
 	case "admin":
 		// Admin can update any service
-	case "owner":
-		if service.OwnerID != userID {
-			return fmt.Errorf("service -> UpdateStatus: owner can only update their own services")
-		}
 	case "caretaker":
 		if service.ServiceType != "cservice" {
 			return fmt.Errorf("service -> UpdateStatus: caretaker can only update cservice")

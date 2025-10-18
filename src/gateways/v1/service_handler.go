@@ -293,7 +293,7 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 }
 
 // @Summary Update service status
-// @Description Update the status of a service booking. Allowed roles: admin, owner, caretaker, doctor.
+// @Description Update the status of a service booking. Allowed roles: admin, caretaker, doctor.
 // @Tags service
 // @Produce json
 // @Param serviceID path string true "Service ID"
@@ -311,7 +311,7 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
-	if token.Role != "admin" && token.Role != "owner" && token.Role != "caretaker" && token.Role != "doctor" {
+	if token.Role != "admin" && token.Role != "caretaker" && token.Role != "doctor" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 

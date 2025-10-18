@@ -642,7 +642,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update the status of a service booking. Allowed roles: admin, owner, caretaker, doctor.",
+                "description": "Update the status of a service booking. Allowed roles: admin, caretaker, doctor.",
                 "produces": [
                     "application/json"
                 ],
