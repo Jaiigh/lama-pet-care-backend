@@ -397,6 +397,18 @@ const docTemplate = `{
                         "description": "Filter services by status (e.g. all, wait, ongoing, finish)",
                         "name": "status",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {

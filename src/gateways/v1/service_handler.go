@@ -265,6 +265,8 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)" [optional default: all]
+// @Param        page  query int    false "Page number for pagination" [optional default: 1]
+// @Param        limit query int    false "Number of items per page" [optional default: 14]
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
@@ -275,11 +277,13 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	statusFilter := ctx.Query("status")
+	page := ctx.QueryInt("page", 1)
+	limit := ctx.QueryInt("limit", 14)
 	var services []*entities.ServiceModel
 	if token.Role == "admin" {
-		services, err = h.ServiceService.FindAllServices(statusFilter)
+		services, err = h.ServiceService.FindAllServices(statusFilter, page, limit)
 	} else {
-		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter)
+		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, page, limit)
 	}
 
 	if err != nil {
@@ -287,8 +291,12 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
-		Data:    services,
-		Status:  fiber.StatusOK,
+		Data: fiber.Map{
+			"page":     page,
+			"amount":   len(services),
+			"services": services,
+		},
+		Status: fiber.StatusOK,
 	})
 }
 

@@ -22,8 +22,8 @@ type IServiceService interface {
 	UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
-	FindServicesByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
-	FindAllServices(status string) ([]*entities.ServiceModel, error)
+	FindServicesByOwnerID(ownerID string, status string, page int, limit int) ([]*entities.ServiceModel, error)
+	FindAllServices(status string, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 }
 
@@ -153,11 +153,27 @@ func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceMod
 	return s.Repo.FindByID(serviceID)
 }
 
-func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
-	return s.Repo.FindByOwnerID(ownerID, status)
+func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, page int, limit int) ([]*entities.ServiceModel, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 14
+	}
+	offset := (page - 1) * limit
+
+	return s.Repo.FindByOwnerID(ownerID, status, offset, limit)
 }
-func (s *ServiceService) FindAllServices(status string) ([]*entities.ServiceModel, error) {
-	return s.Repo.FindAll(status)
+func (s *ServiceService) FindAllServices(status string, page int, limit int) ([]*entities.ServiceModel, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 14
+	}
+	offset := (page - 1) * limit
+
+	return s.Repo.FindAll(status, offset, limit)
 }
 
 func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) error {

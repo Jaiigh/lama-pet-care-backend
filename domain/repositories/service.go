@@ -19,8 +19,8 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
-	FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error)
-	FindAll(status string) ([]*entities.ServiceModel, error)
+	FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindAll(status string, offset int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status string) error
 }
 
@@ -127,7 +127,7 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
 	}
@@ -139,7 +139,9 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
-	).Exec(repo.Context)
+	).OrderBy(
+		db.Service.Rdate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
@@ -151,7 +153,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string) ([]*
 	return result, nil
 }
 
-func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindAll(status string, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{}
 
 	if status != "" && status != "all" {
@@ -163,7 +165,9 @@ func (repo *serviceRepository) FindAll(status string) ([]*entities.ServiceModel,
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
-	).Exec(repo.Context)
+	).OrderBy(
+		db.Service.Rdate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
 	if err != nil {
 		return nil, err
 	}
