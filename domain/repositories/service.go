@@ -140,6 +140,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 		}
 	}
 	if month > 0 && year > 0 {
+		limit = 31
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		endDate := startDate.AddDate(0, 1, 0)
 		params = append(params, db.Service.Rdate.Gte(startDate))
@@ -156,8 +157,20 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 		return nil, err
 	}
 	var result []*entities.ServiceModel
-	for i := range services {
-		result = append(result, mapServiceModel(&services[i]))
+	if month > 0 && year > 0 {
+		uniqueDays := make(map[int]bool)
+		for i := range services {
+			day := services[i].Rdate.Day()
+			if !uniqueDays[day] {
+				result = append(result, mapServiceModel(&services[i]))
+				fmt.Println("Adding service for day:", day)
+				uniqueDays[day] = true
+			}
+		}
+	} else {
+		for i := range services {
+			result = append(result, mapServiceModel(&services[i]))
+		}
 	}
 	return result, nil
 }
@@ -174,6 +187,7 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 		}
 	}
 	if month > 0 && year > 0 {
+		limit = 31
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		endDate := startDate.AddDate(0, 1, 0)
 		params = append(params, db.Service.Rdate.Gte(startDate))
@@ -190,8 +204,19 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 		return nil, err
 	}
 	var result []*entities.ServiceModel
-	for i := range services {
-		result = append(result, mapServiceModel(&services[i]))
+	if month > 0 && year > 0 {
+		uniqueDays := make(map[int]bool)
+		for i := range services {
+			day := services[i].Rdate.Day()
+			if !uniqueDays[day] {
+				result = append(result, mapServiceModel(&services[i]))
+				uniqueDays[day] = true
+			}
+		}
+	} else {
+		for i := range services {
+			result = append(result, mapServiceModel(&services[i]))
+		}
 	}
 	return result, nil
 }
@@ -208,6 +233,7 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 		}
 	}
 	if month > 0 && year > 0 {
+		limit = 31
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		endDate := startDate.AddDate(0, 1, 0)
 		params = append(params, db.Service.Rdate.Gte(startDate))
@@ -224,8 +250,19 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 		return nil, err
 	}
 	var result []*entities.ServiceModel
-	for i := range services {
-		result = append(result, mapServiceModel(&services[i]))
+	if month > 0 && year > 0 {
+		uniqueDays := make(map[int]bool)
+		for i := range services {
+			day := services[i].Rdate.Day()
+			if !uniqueDays[day] {
+				result = append(result, mapServiceModel(&services[i]))
+				uniqueDays[day] = true
+			}
+		}
+	} else {
+		for i := range services {
+			result = append(result, mapServiceModel(&services[i]))
+		}
 	}
 	return result, nil
 }
@@ -239,6 +276,7 @@ func (repo *serviceRepository) FindAll(status string, month, year, offset int, l
 		}
 	}
 	if month > 0 && year > 0 {
+		limit = 31
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		endDate := startDate.AddDate(0, 1, 0)
 		params = append(params, db.Service.Rdate.Gte(startDate))
@@ -255,8 +293,19 @@ func (repo *serviceRepository) FindAll(status string, month, year, offset int, l
 		return nil, err
 	}
 	var result []*entities.ServiceModel
-	for i := range services {
-		result = append(result, mapServiceModel(&services[i]))
+	if month > 0 && year > 0 {
+		uniqueDays := make(map[int]bool)
+		for i := range services {
+			day := services[i].Rdate.Day()
+			if !uniqueDays[day] {
+				result = append(result, mapServiceModel(&services[i]))
+				uniqueDays[day] = true
+			}
+		}
+	} else {
+		for i := range services {
+			result = append(result, mapServiceModel(&services[i]))
+		}
 	}
 	return result, nil
 }
