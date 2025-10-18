@@ -383,7 +383,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all services for the authenticated user. Admins can see all services. Can be filtered by status.",
+                "description": "Get all services for the authenticated user. Admins can see all services. Can be filtered by status, month, and year.",
                 "produces": [
                     "application/json"
                 ],
@@ -396,6 +396,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter services by status (e.g. all, wait, ongoing, finish)",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter services by month (1-12)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter services by year (e.g. 2025)",
+                        "name": "year",
                         "in": "query"
                     },
                     {
