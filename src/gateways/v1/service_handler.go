@@ -260,11 +260,13 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 }
 
 // @Summary      Get services
-// @Description  Get all services for the authenticated user. Admins can see all services. Can be filtered by status.
+// @Description  Get all services for the authenticated user. Admins can see all services. Can be filtered by status, month, and year.
 // @Tags         service
 // @Produce      json
 // @Security     BearerAuth
-// @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)" [optional default: all]
+// @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)"
+// @Param        month  query int    false "Filter services by month (1-12)"
+// @Param        year   query int    false "Filter services by year (e.g. 2025)"
 // @Param        page  query int    false "Page number for pagination" [optional default: 1]
 // @Param        limit query int    false "Number of items per page" [optional default: 5]
 // @Success      200 {object} entities.ResponseModel "Request successful"
@@ -277,23 +279,21 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	statusFilter := ctx.Query("status")
+	month := ctx.QueryInt("month")
+	year := ctx.QueryInt("year")
 	page := ctx.QueryInt("page", 1)
 	limit := ctx.QueryInt("limit", 5)
 	var services []*entities.ServiceModel
-	// if token.Role == "admin" {
-	// 	services, err = h.ServiceService.FindAllServices(statusFilter, page, limit)
-	// } else {
-	// 	services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, page, limit)
-	// }
+
 	switch token.Role {
 	case "admin":
-		services, err = h.ServiceService.FindAllServices(statusFilter, page, limit)
+		services, err = h.ServiceService.FindAllServices(statusFilter, month, year, page, limit)
 	case "owner":
-		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, page, limit)
+		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, month, year, page, limit)
 	case "doctor":
-		services, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, page, limit)
+		services, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, month, year, page, limit)
 	case "caretaker":
-		services, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, page, limit)
+		services, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, month, year, page, limit)
 	}
 
 	if err != nil {

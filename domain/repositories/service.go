@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"time"
 
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
@@ -19,10 +20,10 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
-	FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindByDoctorID(doctorID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindByCaretakerID(caretakerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindAll(status string, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByOwnerID(ownerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByDoctorID(doctorID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByCaretakerID(caretakerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindAll(status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status string) error
 }
 
@@ -129,7 +130,7 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
 	}
@@ -137,6 +138,12 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, offs
 		if serviceStatus, ok := toServiceStatus(status); ok {
 			params = append(params, db.Service.Status.Equals(serviceStatus))
 		}
+	}
+	if month > 0 && year > 0 {
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+		params = append(params, db.Service.Rdate.Gte(startDate))
+		params = append(params, db.Service.Rdate.Lt(endDate))
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
@@ -155,7 +162,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, offs
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Mservice.Where(
 			db.Mservice.Did.Equals(doctorID),
@@ -166,6 +173,12 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, of
 			params = append(params, db.Service.Status.Equals(serviceStatus))
 		}
 	}
+	if month > 0 && year > 0 {
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+		params = append(params, db.Service.Rdate.Gte(startDate))
+		params = append(params, db.Service.Rdate.Lt(endDate))
+	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
@@ -183,7 +196,7 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, of
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Cservice.Where(
 			db.Cservice.Cid.Equals(caretakerID),
@@ -194,6 +207,12 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 			params = append(params, db.Service.Status.Equals(serviceStatus))
 		}
 	}
+	if month > 0 && year > 0 {
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+		params = append(params, db.Service.Rdate.Gte(startDate))
+		params = append(params, db.Service.Rdate.Lt(endDate))
+	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
@@ -211,13 +230,19 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	return result, nil
 }
 
-func (repo *serviceRepository) FindAll(status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindAll(status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{}
 
 	if status != "" && status != "all" {
 		if serviceStatus, ok := toServiceStatus(status); ok {
 			params = append(params, db.Service.Status.Equals(serviceStatus))
 		}
+	}
+	if month > 0 && year > 0 {
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+		params = append(params, db.Service.Rdate.Gte(startDate))
+		params = append(params, db.Service.Rdate.Lt(endDate))
 	}
 
 	services, err := repo.Collection.Service.FindMany(params...).With(
