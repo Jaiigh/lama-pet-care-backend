@@ -23,6 +23,8 @@ type IServiceService interface {
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServicesByOwnerID(ownerID string, status string, page int, limit int) ([]*entities.ServiceModel, error)
+	FindServicesByDoctorID(ownerID string, status string, page int, limit int) ([]*entities.ServiceModel, error)
+	FindServicesByCaretakerID(ownerID string, status string, page int, limit int) ([]*entities.ServiceModel, error)
 	FindAllServices(status string, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 }
@@ -164,6 +166,31 @@ func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, pa
 
 	return s.Repo.FindByOwnerID(ownerID, status, offset, limit)
 }
+
+func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, page int, limit int) ([]*entities.ServiceModel, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 5
+	}
+	offset := (page - 1) * limit
+
+	return s.Repo.FindByDoctorID(doctorID, status, offset, limit)
+}
+
+func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, page int, limit int) ([]*entities.ServiceModel, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 5
+	}
+	offset := (page - 1) * limit
+
+	return s.Repo.FindByCaretakerID(caretakerID, status, offset, limit)
+}
+
 func (s *ServiceService) FindAllServices(status string, page int, limit int) ([]*entities.ServiceModel, error) {
 	if page < 1 {
 		page = 1

@@ -280,10 +280,20 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	page := ctx.QueryInt("page", 1)
 	limit := ctx.QueryInt("limit", 5)
 	var services []*entities.ServiceModel
-	if token.Role == "admin" {
+	// if token.Role == "admin" {
+	// 	services, err = h.ServiceService.FindAllServices(statusFilter, page, limit)
+	// } else {
+	// 	services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, page, limit)
+	// }
+	switch token.Role {
+	case "admin":
 		services, err = h.ServiceService.FindAllServices(statusFilter, page, limit)
-	} else {
+	case "owner":
 		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, page, limit)
+	case "doctor":
+		services, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, page, limit)
+	case "caretaker":
+		services, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, page, limit)
 	}
 
 	if err != nil {

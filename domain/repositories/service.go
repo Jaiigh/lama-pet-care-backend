@@ -20,6 +20,8 @@ type IServiceRepository interface {
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByDoctorID(doctorID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByCaretakerID(caretakerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error)
 	FindAll(status string, offset int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status string) error
 }
@@ -130,6 +132,62 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
+	}
+	if status != "" && status != "all" {
+		if serviceStatus, ok := toServiceStatus(status); ok {
+			params = append(params, db.Service.Status.Equals(serviceStatus))
+		}
+	}
+	services, err := repo.Collection.Service.FindMany(params...).With(
+		db.Service.Cservice.Fetch(),
+		db.Service.Mservice.Fetch(),
+	).OrderBy(
+		db.Service.Rdate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
+
+	if err != nil {
+		return nil, err
+	}
+	var result []*entities.ServiceModel
+	for i := range services {
+		result = append(result, mapServiceModel(&services[i]))
+	}
+	return result, nil
+}
+
+func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+	params := []db.ServiceWhereParam{
+		db.Service.Mservice.Where(
+			db.Mservice.Did.Equals(doctorID),
+		),
+	}
+	if status != "" && status != "all" {
+		if serviceStatus, ok := toServiceStatus(status); ok {
+			params = append(params, db.Service.Status.Equals(serviceStatus))
+		}
+	}
+	services, err := repo.Collection.Service.FindMany(params...).With(
+		db.Service.Cservice.Fetch(),
+		db.Service.Mservice.Fetch(),
+	).OrderBy(
+		db.Service.Rdate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
+
+	if err != nil {
+		return nil, err
+	}
+	var result []*entities.ServiceModel
+	for i := range services {
+		result = append(result, mapServiceModel(&services[i]))
+	}
+	return result, nil
+}
+
+func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, offset int, limit int) ([]*entities.ServiceModel, error) {
+	params := []db.ServiceWhereParam{
+		db.Service.Cservice.Where(
+			db.Cservice.Cid.Equals(caretakerID),
+		),
 	}
 	if status != "" && status != "all" {
 		if serviceStatus, ok := toServiceStatus(status); ok {
