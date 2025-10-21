@@ -151,7 +151,7 @@ const docTemplate = `{
             }
         },
         "/auth/password": {
-            "post": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -383,7 +383,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all services for the authenticated user. Admins can see all services. Can be filtered by status.",
+                "description": "Get all services for the authenticated user. Admins can see all services. Can be filtered by status, month, and year.",
                 "produces": [
                     "application/json"
                 ],
@@ -394,15 +394,32 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer \u003cJWT token\u003e",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Filter services by status (e.g. all, wait, ongoing, finish)",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter services by month (1-12)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter services by year (e.g. 2025)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -495,7 +512,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/services/{id}": {
+        "/services/{serviceID}": {
             "delete": {
                 "security": [
                     {
@@ -567,7 +584,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to ` + "`" + `cservice` + "`" + `, include ` + "`" + `staff_id` + "`" + ` for the caretaker and optionally ` + "`" + `comment` + "`" + `. When switching to ` + "`" + `mservice` + "`" + `, include doctor ` + "`" + `staff_id` + "`" + ` และ ` + "`" + `disease` + "`" + `.",
+                "description": "Admin-only endpoint for adjusting service data. Provide the fields that need to change.",
                 "consumes": [
                     "application/json"
                 ],
@@ -629,6 +646,82 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/services/{serviceID}/{status}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the status of a service booking. Allowed roles: admin, caretaker, doctor.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Update service status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service ID",
+                        "name": "serviceID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "wait",
+                            "ongoing",
+                            "finish"
+                        ],
+                        "type": "string",
+                        "description": "service status (wait, ongoing, finish)",
+                        "name": "status",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
@@ -844,8 +937,6 @@ const docTemplate = `{
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
-                "owner_id",
-                "payment_id",
                 "pet_id",
                 "price",
                 "reserve_date",
@@ -866,6 +957,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_id": {
+                    "description": "for backend don't require in request",
                     "type": "string"
                 },
                 "pet_id": {
@@ -1020,9 +1112,6 @@ const docTemplate = `{
                 "owner_id": {
                     "type": "string"
                 },
-                "payment_id": {
-                    "type": "string"
-                },
                 "pet_id": {
                     "type": "string"
                 },
@@ -1033,12 +1122,10 @@ const docTemplate = `{
                 "reserve_date": {
                     "type": "string"
                 },
-                "service_type": {
-                    "type": "string",
-                    "enum": [
-                        "mservice",
-                        "cservice"
-                    ]
+                "score": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "staff_id": {
                     "type": "string"

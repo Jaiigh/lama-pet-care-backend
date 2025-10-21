@@ -29,7 +29,7 @@ import (
 // @Security BearerAuth
 func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if token.Role != "owner" && token.Role != "admin" {
@@ -103,7 +103,7 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 }
 
 // @Summary Update service booking
-// @Description Admin-only endpoint for adjusting service data. Provide the fields that need to change. When switching to `cservice`, include `staff_id` for the caretaker and optionally `comment`. When switching to `mservice`, include doctor `staff_id` และ `disease`.
+// @Description Admin-only endpoint for adjusting service data. Provide the fields that need to change.
 // @Tags service
 // @Accept json
 // @Produce json
@@ -116,11 +116,11 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 // @Failure 404 {object} entities.ResponseMessage "Service not found"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/{id} [patch]
+// @Router /services/{serviceID} [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	if token.Role != "admin" {
@@ -137,14 +137,6 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
-	if req.ServiceType != nil {
-		normalized := strings.ToLower(strings.TrimSpace(*req.ServiceType))
-		if normalized == "" {
-			req.ServiceType = nil
-		} else {
-			*req.ServiceType = normalized
-		}
-	}
 	if req.Comment != nil {
 		trimmed := strings.TrimSpace(*req.Comment)
 		if trimmed == "" {
@@ -164,11 +156,9 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 
 	if req.OwnerID == nil &&
 		req.PetID == nil &&
-		req.PaymentID == nil &&
 		req.Price == nil &&
 		req.Status == nil &&
 		req.ReserveDate == nil &&
-		req.ServiceType == nil &&
 		req.StaffID == nil &&
 		req.Disease == nil &&
 		req.Comment == nil {
@@ -213,12 +203,12 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 404 {object} entities.ResponseMessage "Service not found"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/{id} [delete]
+// @Router /services/{serviceID} [delete]
 // @Security BearerAuth
 func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 	// Decode JWT token
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{
 			Message: "Unauthorized token",
 		})
@@ -270,29 +260,40 @@ func (h *HTTPGateway) DeleteService(ctx *fiber.Ctx) error {
 }
 
 // @Summary      Get services
-// @Description  Get all services for the authenticated user. Admins can see all services. Can be filtered by status.
+// @Description  Get all services for the authenticated user. Admins can see all services. Can be filtered by status, month, and year.
 // @Tags         service
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization header string true "Bearer <JWT token>"
 // @Param        status query string false "Filter services by status (e.g. all, wait, ongoing, finish)"
+// @Param        month  query int    false "Filter services by month (1-12)"
+// @Param        year   query int    false "Filter services by year (e.g. 2025)"
+// @Param        page  query int    false "Page number for pagination" [optional default: 1]
+// @Param        limit query int    false "Number of items per page" [optional default: 5]
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
 // @Router       /services [get]
 func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
-	if err != nil {
+	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 	statusFilter := ctx.Query("status")
+	month := ctx.QueryInt("month")
+	year := ctx.QueryInt("year")
+	page := ctx.QueryInt("page", 1)
+	limit := ctx.QueryInt("limit", 5)
 	var services []*entities.ServiceModel
-	if token.Role == "admin" {
 
-		services, err = h.ServiceService.FindAllServices(statusFilter)
-	} else {
-
-		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter)
+	switch token.Role {
+	case "admin":
+		services, err = h.ServiceService.FindAllServices(statusFilter, month, year, page, limit)
+	case "owner":
+		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, month, year, page, limit)
+	case "doctor":
+		services, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, month, year, page, limit)
+	case "caretaker":
+		services, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, month, year, page, limit)
 	}
 
 	if err != nil {
@@ -300,7 +301,66 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
-		Data:    services,
-		Status:  fiber.StatusOK,
+		Data: fiber.Map{
+			"page":     page,
+			"amount":   len(services),
+			"services": services,
+		},
+		Status: fiber.StatusOK,
+	})
+}
+
+// @Summary Update service status
+// @Description Update the status of a service booking. Allowed roles: admin, caretaker, doctor.
+// @Tags service
+// @Produce json
+// @Param serviceID path string true "Service ID"
+// @Param status path string true "service status (wait, ongoing, finish)" Enums(wait, ongoing, finish)
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid request"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 404 {object} entities.ResponseMessage "Service not found"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /services/{serviceID}/{status} [patch]
+// @Security BearerAuth
+func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" && token.Role != "caretaker" && token.Role != "doctor" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	serviceID := ctx.Params("serviceID")
+	if serviceID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid service ID"})
+	}
+	status := ctx.Params("status")
+	if status != "wait" && status != "ongoing" && status != "finish" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid status"})
+	}
+
+	err = h.ServiceService.UpdateStatus(serviceID, status, token.Role, token.UserID)
+	if err != nil {
+		switch {
+		case errors.Is(err, db.ErrNotFound):
+			return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "service not found"})
+		case strings.Contains(strings.ToLower(err.Error()), "invalid"),
+			strings.Contains(strings.ToLower(err.Error()), "required"):
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: err.Error()})
+		default:
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "status updated successfully",
+		Data: fiber.Map{
+			"service_id": serviceID,
+			"status":     status,
+		},
+		Status: fiber.StatusOK,
 	})
 }

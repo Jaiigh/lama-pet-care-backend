@@ -31,6 +31,7 @@ type TokenDetails struct {
 	Token     *string `json:"token"`
 	UserID    string  `json:"user_id"`
 	Role      string  `json:"role"`
+	Purpose   string  `json:"purpose"`
 	ExpiresIn *int64  `json:"exp"`
 }
 
@@ -56,12 +57,15 @@ func DecodeJWTToken(ctx *fiber.Ctx) (*TokenDetails, error) {
 		if key == "role" {
 			td.Role = value.(string)
 		}
+		if key == "purpose" {
+			td.Purpose = value.(string)
+		}
 	}
 	*td.Token = token.Raw
 	return td, nil
 }
 
-func GenerateJWTToken(userID string, role string) (*TokenDetails, error) {
+func GenerateJWTToken(userID string, role string, purpose string) (*TokenDetails, error) {
 	now := time.Now().UTC()
 
 	td := &TokenDetails{
@@ -74,12 +78,14 @@ func GenerateJWTToken(userID string, role string) (*TokenDetails, error) {
 
 	td.UserID = userID
 	td.Role = role
+	td.Purpose = purpose
 
 	SigningKey := []byte(os.Getenv("JWT_SECRET_KEY"))
 
 	atClaims := make(jwt.MapClaims)
 	atClaims["user_id"] = userID
 	atClaims["role"] = role
+	atClaims["purpose"] = purpose
 	atClaims["exp"] = time.Now().Add(time.Hour * 6).Unix()
 	atClaims["iat"] = time.Now().Unix()
 	atClaims["nbf"] = time.Now().Unix()
@@ -124,13 +130,16 @@ func DecodeResetPasswordJWTToken(tokenString string) (*TokenDetails, error) {
 		if key == "role" {
 			td.Role = value.(string)
 		}
+		if key == "purpose" {
+			td.Purpose = value.(string)
+		}
 	}
 
 	*td.Token = tokenString
 	return td, nil
 }
 
-func GenerateResetPasswordJWTToken(userID string, role string) (*TokenDetails, error) {
+func GenerateResetPasswordJWTToken(userID string, role string, purpose string) (*TokenDetails, error) {
 	now := time.Now().UTC()
 
 	td := &TokenDetails{
@@ -143,12 +152,14 @@ func GenerateResetPasswordJWTToken(userID string, role string) (*TokenDetails, e
 
 	td.UserID = userID
 	td.Role = role
+	td.Purpose = purpose
 
 	SigningKey := []byte(os.Getenv("JWT_SECRET_KEY"))
 
 	atClaims := make(jwt.MapClaims)
 	atClaims["user_id"] = userID
 	atClaims["role"] = role
+	atClaims["purpose"] = purpose
 	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 	atClaims["iat"] = time.Now().Unix()
 	atClaims["nbf"] = time.Now().Unix()
