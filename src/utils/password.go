@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gopkg.in/gomail.v2"
+	"github.com/resend/resend-go/v2"
 )
 
 func HashPassword(password string) (string, error) {
@@ -39,19 +39,21 @@ func ValidPassword(password string) bool {
 	return len(password) >= 8
 }
 
+// resend api
 func SendResetEmail(toEmail string, resetLink string) error {
-	m := gomail.NewMessage()
-	app_email := os.Getenv("SMTP_USER")
-	// m.SetHeader("From", app_email, "no-reply@lama.com")
-	m.SetAddressHeader("From", app_email, "Lama Support")
-	m.SetHeader("To", toEmail)
-	m.SetHeader("Subject", "Password Reset Link")
-	m.SetBody("text/html", fmt.Sprintf(`
-	    <p>You requested to reset your password.</p>
-	    <p>Click <a href="%s">here</a> to reset. Link expires in 15 minutes.</p>`, resetLink))
+	client := resend.NewClient(os.Getenv("RESEND_API_KEY"))
 
-	app_pass := os.Getenv("SMTP_PASS")
-	d := gomail.NewDialer("smtp.gmail.com", 587, app_email, app_pass)
+	params := &resend.SendEmailRequest{
+		From:    "LAMA Support <onboarding@resend.dev>",
+		To:      []string{toEmail},
+		Subject: "Password Reset Link",
+		Html: fmt.Sprintf(`
+			<p>You requested to reset your password.</p>
+			<p>Click <a href="%s">here</a> to reset. Link expires in 15 minutes.</p>`, resetLink),
+	}
 
-	return d.DialAndSend(m)
+	// it returns sent response and error but sent response which is just id is not useful now
+	_, err := client.Emails.Send(params)
+
+	return err
 }
