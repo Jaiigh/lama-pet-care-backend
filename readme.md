@@ -10,8 +10,7 @@ JWT_SECRET_KEY=Test
 JWT_REFESH_SECRET_KEY=Test
 
 FORGET_PASSWORD_LINK=<resetpassword page url>
-SMTP_USER=<sender email>
-SMTP_PASS=<sender smtp pass>
+RESEND_API_KEY=<resend api key>
 
 SUPABASE_URL=https://rcbpuiqwucaxxubsjnbx.supabase.co
 SUPABASE_KEY=<supabase api key>
