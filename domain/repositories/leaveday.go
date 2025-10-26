@@ -18,6 +18,9 @@ type leavedayRepository struct {
 type ILeavedayRepository interface {
 	InsertCaretakerLeaveday(cid string, leaveday time.Time) (*entities.LeavedayModel, error)
 	InsertDoctorLeaveday(did string, leaveday time.Time) (*entities.LeavedayModel, error)
+	FindByCaretakerID(cid string) (*entities.LeavedayModel, error)
+	FindByDoctorID(did string) (*entities.LeavedayModel, error)
+	FindByLeaveday(leaveday time.Time) (*[]entities.LeavedayModel, error)
 }
 
 func NewLeavedayRepository(db *ds.PrismaDB) ILeavedayRepository {
@@ -69,4 +72,75 @@ func (repo *leavedayRepository) InsertDoctorLeaveday(did string, leaveday time.T
 		StaffType: "doctor",
 		Leaveday:  []db.DateTime{createdData.Leaveday},
 	}, nil
+}
+
+func (repo *leavedayRepository) FindByCaretakerID(cid string) (*entities.LeavedayModel, error) {
+	data, err := repo.Collection.Leaveday.FindMany(
+		db.Leaveday.Cid.Equals(cid),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("leaveday -> FindLeavedayByStaffID: %v", err)
+	}
+
+	var leavedays []db.DateTime
+	for i := range data {
+		leavedays = append(leavedays, data[i].Leaveday)
+	}
+
+	return &entities.LeavedayModel{
+		StaffID:   cid,
+		StaffType: "caretaker",
+		Leaveday:  leavedays,
+	}, nil
+}
+
+func (repo *leavedayRepository) FindByDoctorID(did string) (*entities.LeavedayModel, error) {
+	data, err := repo.Collection.Leaveday.FindMany(
+		db.Leaveday.Did.Equals(did),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("leaveday -> FindLeavedayByStaffID: %v", err)
+	}
+
+	var leavedays []db.DateTime
+	for i := range data {
+		leavedays = append(leavedays, data[i].Leaveday)
+	}
+
+	return &entities.LeavedayModel{
+		StaffID:   did,
+		StaffType: "doctor",
+		Leaveday:  leavedays,
+	}, nil
+}
+
+func (repo *leavedayRepository) FindByLeaveday(leaveday time.Time) (*[]entities.LeavedayModel, error) {
+	data, err := repo.Collection.Leaveday.FindMany(
+		db.Leaveday.Leaveday.Equals(leaveday),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("leaveday -> FindLeavedayByStaffID: %v", err)
+	}
+
+	var results []entities.LeavedayModel
+	for i := range data {
+		var staffId, staffType string
+		var ok bool
+		if staffId, ok = data[i].Cid(); !ok {
+			staffId, _ = data[i].Did()
+			staffType = "doctor"
+		} else {
+			staffType = "caretaker"
+		}
+		results = append(results, entities.LeavedayModel{
+			StaffID:   staffId,
+			StaffType: staffType,
+			Leaveday:  []db.DateTime{data[i].Leaveday},
+		})
+	}
+
+	return &results, nil
 }
