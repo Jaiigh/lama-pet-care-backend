@@ -30,7 +30,7 @@ func NewLeavedayRepository(db *ds.PrismaDB) ILeavedayRepository {
 func (repo *leavedayRepository) InsertCaretakerLeaveday(cid string, leaveday time.Time) (*entities.LeavedayModel, error) {
 	createdData, err := repo.Collection.Leaveday.CreateOne(
 		db.Leaveday.Leaveday.Set(leaveday),
-		db.Leaveday.Cid.Set(cid),
+		db.Leaveday.Caretaker.Link(db.Caretaker.UserID.Equals(cid)),
 	).Exec(repo.Context)
 
 	if err != nil {
@@ -52,7 +52,7 @@ func (repo *leavedayRepository) InsertCaretakerLeaveday(cid string, leaveday tim
 func (repo *leavedayRepository) InsertDoctorLeaveday(did string, leaveday time.Time) (*entities.LeavedayModel, error) {
 	createdData, err := repo.Collection.Leaveday.CreateOne(
 		db.Leaveday.Leaveday.Set(leaveday),
-		db.Leaveday.Did.Set(did),
+		db.Leaveday.Doctor.Link(db.Doctor.UserID.Equals(did)),
 	).Exec(repo.Context)
 
 	if err != nil {
