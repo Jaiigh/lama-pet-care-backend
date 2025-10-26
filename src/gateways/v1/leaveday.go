@@ -43,9 +43,9 @@ func (h *HTTPGateway) CreateLeaveday(ctx *fiber.Ctx) error {
 	}
 
 	var leavedayData *entities.LeavedayModel
-	if leavedayData, err = h.LeavedayService.InsertLeaveday(*token.Token, token.Role, leaveday); err != nil {
+	if leavedayData, err = h.LeavedayService.InsertLeaveday(token.UserID, token.Role, leaveday); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
-			Message: "invalid date format, expected YYYY-MM-DD",
+			Message: err.Error(),
 		})
 	}
 
