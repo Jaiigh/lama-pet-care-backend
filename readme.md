@@ -12,7 +12,7 @@ JWT_REFESH_SECRET_KEY=Test
 FORGET_PASSWORD_LINK=<resetpassword page url>
 RESEND_API_KEY=<resend api key>
 
-SUPABASE_URL=https://rcbpuiqwucaxxubsjnbx.supabase.co
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=<supabase api key>
 ```
 # Install dependencies
