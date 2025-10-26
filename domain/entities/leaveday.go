@@ -7,5 +7,5 @@ import (
 type LeavedayModel struct {
 	StaffID   string
 	StaffType string
-	Leaveday  db.DateTime
+	Leaveday  []db.DateTime
 }

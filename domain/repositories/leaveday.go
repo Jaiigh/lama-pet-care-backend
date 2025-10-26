@@ -45,7 +45,7 @@ func (repo *leavedayRepository) InsertCaretakerLeaveday(cid string, leaveday tim
 	return &entities.LeavedayModel{
 		StaffID:   staffId,
 		StaffType: "caretaker",
-		Leaveday:  createdData.Leaveday,
+		Leaveday:  []db.DateTime{createdData.Leaveday},
 	}, nil
 }
 
@@ -67,6 +67,6 @@ func (repo *leavedayRepository) InsertDoctorLeaveday(did string, leaveday time.T
 	return &entities.LeavedayModel{
 		StaffID:   staffId,
 		StaffType: "doctor",
-		Leaveday:  createdData.Leaveday,
+		Leaveday:  []db.DateTime{createdData.Leaveday},
 	}, nil
 }
