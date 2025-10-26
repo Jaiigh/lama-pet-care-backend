@@ -954,7 +954,7 @@ const docTemplate = `{
                     "400": {
                         "description": "picture file is required",
                         "schema": {
-                            "$ref": "#/definitions/entities.ResponseErrorMessage"
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
                     "401": {
@@ -966,7 +966,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/entities.ResponseErrorMessage"
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     }
                 }
@@ -1106,14 +1106,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.ResponseErrorMessage": {
-            "type": "object",
-            "properties": {
-                "message": {
                     "type": "string"
                 }
             }
