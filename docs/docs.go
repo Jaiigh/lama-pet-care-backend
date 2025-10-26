@@ -391,6 +391,15 @@ const docTemplate = `{
                     "Leaveday"
                 ],
                 "summary": "Create Leaveday",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "leaveday",
+                        "name": "day",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "request successfully",

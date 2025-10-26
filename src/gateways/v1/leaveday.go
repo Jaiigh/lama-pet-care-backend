@@ -12,6 +12,7 @@ import (
 // @Description Create Staff leaveday by token and day params (format: YYYY-MM-DD)
 // @Tags Leaveday
 // @Produce json
+// @Param day path string true "leaveday"
 // @Success 200 {object} entities.ResponseModel "request successfully"
 // @Failure 400 {object} entities.ResponseMessage "Invalid request"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
