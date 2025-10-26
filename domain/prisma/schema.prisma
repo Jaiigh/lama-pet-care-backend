@@ -26,6 +26,7 @@ model Users {
 
   @@unique([email, role], name: "Users_email_role_key")
   @@unique([telephone_number, role], name: "Users_telephone_number_role_key")
+  @@index([email])
 }
 
 model Caretaker {
@@ -134,9 +135,9 @@ model Service {
 }
 
 model Leaveday {
-  id    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  CID   String?  @db.Uuid
-  DID   String?  @db.Uuid
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  CID      String?  @db.Uuid
+  DID      String?  @db.Uuid
   leaveday DateTime @db.Date
 
   Caretaker Caretaker? @relation(fields: [CID], references: [user_id], onDelete: Cascade)
@@ -144,6 +145,7 @@ model Leaveday {
 
   @@unique([CID, leaveday], name: "Leaveday_CID_leaveday_key")
   @@unique([DID, leaveday], name: "Leaveday_DID_leaveday_key")
+  @@index([leaveday])
 }
 
 enum payment_status {
