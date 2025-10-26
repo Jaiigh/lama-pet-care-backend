@@ -137,7 +137,7 @@ model Leaveday {
   id    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   CID   String?  @db.Uuid
   DID   String?  @db.Uuid
-  leaveday DateTime @db.Timestamptz(6)
+  leaveday DateTime @db.Date
 
   Caretaker Caretaker? @relation(fields: [CID], references: [user_id], onDelete: Cascade)
   Doctor    Doctor?    @relation(fields: [DID], references: [user_id], onDelete: Cascade)
