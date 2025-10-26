@@ -38,7 +38,7 @@ func (h *HTTPGateway) CreateLeaveday(ctx *fiber.Ctx) error {
 	leaveday, err := time.Parse("2006-01-02", leavedayStr) // <-- for YYYY-MM-DD format
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid date format, expected YYYY-MM-DD",
+			Message: "invalid date or date format, expected YYYY-MM-DD",
 		})
 	}
 
