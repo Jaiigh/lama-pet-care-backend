@@ -20,7 +20,7 @@ type ICaretakerRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
-	FindAvailableCaretaker(date time.Time, offset, limit int) (*[]db.CaretakerModel, int, error)
+	FindAvailableCaretaker(date time.Time) (*[]db.CaretakerModel, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -138,7 +138,7 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 	}, nil
 }
 
-func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time, offset, limit int) (*[]db.CaretakerModel, int, error) {
+func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time) (*[]db.CaretakerModel, error) {
 	caretakers, err := repo.Collection.Caretaker.FindMany(
 		db.Caretaker.Leaveday.None(
 			db.Leaveday.Leaveday.Equals(date),
@@ -152,11 +152,11 @@ func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time, offset, 
 	).Exec(repo.Context)
 
 	if err != nil {
-		return nil, 0, fmt.Errorf("users -> FindByID: %v", err)
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
 	}
 	if caretakers == nil {
-		return nil, 0, nil
+		return nil, nil
 	}
 
-	return &caretakers, len(caretakers), nil
+	return &caretakers, nil
 }

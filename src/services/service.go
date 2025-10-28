@@ -210,13 +210,15 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 
 func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
+
 	switch serviceType {
 	case "caretaker":
-		caretakers, amount, err := s.CaretakerRepo.FindAvailableCaretaker(date, offset, limit)
-		if err != nil {
+		caretakers, err := s.CaretakerRepo.FindAvailableCaretaker(date)
+		if err != nil || caretakers == nil {
 			return nil, 0, err
 		}
-		var results []*entities.AvailableStaffResponse
+
+		var filtered []*entities.AvailableStaffResponse
 		for _, c := range *caretakers {
 			cservices := c.Cservice()
 
@@ -235,6 +237,7 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 				}
 			}
 
+			// skip if full-day busy
 			if len(hourSet) >= 8 {
 				continue
 			}
@@ -248,15 +251,29 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 
 			userData := c.Users()
 			rating, _ := c.Rating()
-			// you can now use busyTimeSlot here
-			results = append(results, &entities.AvailableStaffResponse{
+
+			filtered = append(filtered, &entities.AvailableStaffResponse{
 				ID:           c.UserID,
 				Name:         userData.Name,
 				BusyTimeSlot: busyTimeSlot,
 				Rating:       rating,
 			})
 		}
-		return results, amount, err
+
+		// Apply pagination AFTER filtering
+		total := len(filtered)
+		start := offset
+		end := offset + limit
+		if start > total {
+			start = total
+		}
+		if end > total {
+			end = total
+		}
+		paged := filtered[start:end]
+
+		return paged, total, nil
+
 	case "doctor":
 		return nil, 0, nil
 	default:
