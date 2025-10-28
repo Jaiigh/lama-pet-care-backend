@@ -156,50 +156,22 @@ func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceMod
 }
 
 func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 5
-	}
-	offset := (page - 1) * limit
-
+	offset, limit := calDefaultLimitAndOffset(page, limit)
 	return s.Repo.FindByOwnerID(ownerID, status, month, year, offset, limit)
 }
 
 func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 5
-	}
-	offset := (page - 1) * limit
-
+	offset, limit := calDefaultLimitAndOffset(page, limit)
 	return s.Repo.FindByDoctorID(doctorID, status, month, year, offset, limit)
 }
 
 func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 5
-	}
-	offset := (page - 1) * limit
-
+	offset, limit := calDefaultLimitAndOffset(page, limit)
 	return s.Repo.FindByCaretakerID(caretakerID, status, month, year, offset, limit)
 }
 
 func (s *ServiceService) FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 5
-	}
-	offset := (page - 1) * limit
-
+	offset, limit := calDefaultLimitAndOffset(page, limit)
 	return s.Repo.FindAll(status, month, year, offset, limit)
 }
 
@@ -241,4 +213,15 @@ func mapToSubService(service entities.ServiceModel) *entities.SubService {
 		Score:     service.Score,
 	}
 	return result
+}
+
+func calDefaultLimitAndOffset(page, limit int) (int, int) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 5
+	}
+	//return offset, limit
+	return (page - 1) * limit, limit
 }
