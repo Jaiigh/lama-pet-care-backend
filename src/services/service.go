@@ -227,13 +227,8 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 
 			for _, cs := range cservices {
 				service := cs.Service()
-				if service != nil && utils.CheckSameDate(service.RdateStart, date) {
-					startHour := service.RdateStart.Hour()
-					endHour := service.RdateEnd.Hour()
-
-					for h := startHour; h < endHour; h++ {
-						hourSet[h] = true // mark hour as busy
-					}
+				if service != nil {
+					hourSet = *GetUniqueBusyTimeSlots(service.RdateStart, service.RdateEnd, date, hourSet)
 				}
 			}
 
@@ -243,34 +238,20 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 			}
 
 			// convert unique hours to slice
-			var busyTimeSlot []int
-			for h := range hourSet {
-				busyTimeSlot = append(busyTimeSlot, h)
-			}
-			sort.Ints(busyTimeSlot)
+			busyTimeSlot := convertTimeMapArray(&hourSet)
 
 			userData := c.Users()
 			rating, _ := c.Rating()
-
 			filtered = append(filtered, &entities.AvailableStaffResponse{
 				ID:           c.UserID,
 				Name:         userData.Name,
-				BusyTimeSlot: busyTimeSlot,
+				BusyTimeSlot: *busyTimeSlot,
 				Rating:       rating,
 			})
 		}
 
 		// Apply pagination AFTER filtering
-		total := len(filtered)
-		start := offset
-		end := offset + limit
-		if start > total {
-			start = total
-		}
-		if end > total {
-			end = total
-		}
-		paged := filtered[start:end]
+		paged, total := pagination(filtered, offset, limit)
 
 		return paged, total, nil
 
@@ -289,13 +270,8 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 
 			for _, ms := range mservices {
 				service := ms.Service()
-				if service != nil && utils.CheckSameDate(service.RdateStart, date) {
-					startHour := service.RdateStart.Hour()
-					endHour := service.RdateEnd.Hour()
-
-					for h := startHour; h < endHour; h++ {
-						hourSet[h] = true // mark hour as busy
-					}
+				if service != nil {
+					hourSet = *GetUniqueBusyTimeSlots(service.RdateStart, service.RdateEnd, date, hourSet)
 				}
 			}
 
@@ -305,32 +281,18 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 			}
 
 			// convert unique hours to slice
-			var busyTimeSlot []int
-			for h := range hourSet {
-				busyTimeSlot = append(busyTimeSlot, h)
-			}
-			sort.Ints(busyTimeSlot)
+			busyTimeSlot := convertTimeMapArray(&hourSet)
 
 			userData := d.Users()
-
 			filtered = append(filtered, &entities.AvailableStaffResponse{
 				ID:           d.UserID,
 				Name:         userData.Name,
-				BusyTimeSlot: busyTimeSlot,
+				BusyTimeSlot: *busyTimeSlot,
 			})
 		}
 
 		// Apply pagination AFTER filtering
-		total := len(filtered)
-		start := offset
-		end := offset + limit
-		if start > total {
-			start = total
-		}
-		if end > total {
-			end = total
-		}
-		paged := filtered[start:end]
+		paged, total := pagination(filtered, offset, limit)
 
 		return paged, total, nil
 	default:
@@ -358,4 +320,42 @@ func calDefaultLimitAndOffset(page, limit int) (int, int) {
 	}
 	//return offset, limit
 	return (page - 1) * limit, limit
+}
+
+func GetUniqueBusyTimeSlots(rdateStart, rdateEnd, targetDate time.Time, hourSet map[int]bool) *map[int]bool {
+	if !utils.CheckSameDate(rdateStart, targetDate) {
+		return nil
+	}
+
+	startHour := rdateStart.Hour()
+	endHour := rdateEnd.Hour()
+
+	for h := startHour; h < endHour; h++ {
+		hourSet[h] = true
+	}
+
+	return &hourSet
+}
+
+func convertTimeMapArray(uniqueTime *map[int]bool) *[]int {
+	var busyTimeSlot []int
+	for h := range *uniqueTime {
+		busyTimeSlot = append(busyTimeSlot, h)
+	}
+	sort.Ints(busyTimeSlot)
+	return &busyTimeSlot
+}
+
+func pagination(filtered []*entities.AvailableStaffResponse, offset, limit int) ([]*entities.AvailableStaffResponse, int) {
+	total := len(filtered)
+	start := offset
+	end := offset + limit
+	if start > total {
+		start = total
+	}
+	if end > total {
+		end = total
+	}
+	paged := filtered[start:end]
+	return paged, total
 }
