@@ -1003,7 +1003,8 @@ const docTemplate = `{
             "required": [
                 "pet_id",
                 "price",
-                "reserve_date",
+                "reserve_date_end",
+                "reserve_date_start",
                 "service_type",
                 "staff_id",
                 "status"
@@ -1031,7 +1032,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 0
                 },
-                "reserve_date": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
                     "type": "string"
                 },
                 "service_type": {
@@ -1175,7 +1179,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 0
                 },
-                "reserve_date": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
                     "type": "string"
                 },
                 "score": {

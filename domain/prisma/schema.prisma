@@ -120,7 +120,8 @@ model Pet {
 model Service {
   price  Int
   status service_status
-  rdate  DateTime       @db.Timestamptz(6)
+  rdate_start  DateTime       @db.Timestamptz(6)
+  rdate_end  DateTime       @db.Timestamptz(6)
   SID    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   PETID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   PAYID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid

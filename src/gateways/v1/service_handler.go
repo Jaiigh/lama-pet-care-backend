@@ -158,7 +158,8 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 		req.PetID == nil &&
 		req.Price == nil &&
 		req.Status == nil &&
-		req.ReserveDate == nil &&
+		req.ReserveDateStart == nil &&
+		req.ReserveDateEnd == nil &&
 		req.StaffID == nil &&
 		req.Disease == nil &&
 		req.Comment == nil {
