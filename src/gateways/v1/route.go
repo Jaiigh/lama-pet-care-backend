@@ -31,6 +31,7 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	services.Patch("/:serviceID", gateway.UpdateService)
 	services.Delete("/:serviceID", gateway.DeleteService)
 	services.Patch("/:serviceID/:status", gateway.UpdateStatusService)
+	services.Get("/staff", gateway.GetAvailableStaff)
 
 	leaveday := api.Group("/leaveday", middlewares.SetJWtHeaderHandler())
 	leaveday.Post("/:day", gateway.CreateLeaveday)

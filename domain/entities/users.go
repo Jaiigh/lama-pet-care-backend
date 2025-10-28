@@ -74,3 +74,10 @@ type UpdateUserModel struct {
 	Rating          *db.Decimal `json:"rating,omitempty"`          // caretaker only
 	TotalSpending   *db.Decimal `json:"total_spending,omitempty"`  // owner only
 }
+
+type AvailableStaffResponse struct {
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	BusyTimeSlot []int      `json:"busy_time_slot"`
+	Rating       db.Decimal `json:"rating,omitempty"`
+}

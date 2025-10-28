@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -19,6 +20,7 @@ type ICaretakerRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
+	FindAvailableCaretaker(date time.Time, offset, limit int) (*[]db.CaretakerModel, int, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -134,4 +136,27 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 		EndWorkTime:    updatedUser.EndWorkingTime,
 		Rating:         rating,
 	}, nil
+}
+
+func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time, offset, limit int) (*[]db.CaretakerModel, int, error) {
+	caretakers, err := repo.Collection.Caretaker.FindMany(
+		db.Caretaker.Leaveday.None(
+			db.Leaveday.Leaveday.Equals(date),
+		),
+	).With(
+		db.Caretaker.Cservice.Fetch().With(
+			db.Cservice.Service.Fetch(),
+		),
+	).OrderBy(
+		db.Caretaker.Rating.Order(db.SortOrderAsc),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("users -> FindByID: %v", err)
+	}
+	if caretakers == nil {
+		return nil, 0, nil
+	}
+
+	return &caretakers, len(caretakers), nil
 }

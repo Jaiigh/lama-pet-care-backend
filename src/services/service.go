@@ -2,10 +2,13 @@ package services
 
 import (
 	"fmt"
+	"sort"
+	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
+	"lama-backend/src/utils"
 )
 
 type ServiceService struct {
@@ -27,6 +30,7 @@ type IServiceService interface {
 	FindServicesByCaretakerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
+	FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error)
 }
 
 func NewServiceService(
@@ -202,6 +206,62 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 		return fmt.Errorf("service -> UpdateStatus: invalid role %q", role)
 	}
 	return s.Repo.UpdateStatus(serviceID, status)
+}
+
+func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error) {
+	offset, limit := calDefaultLimitAndOffset(page, limit)
+	switch serviceType {
+	case "caretaker":
+		caretakers, amount, err := s.CaretakerRepo.FindAvailableCaretaker(date, offset, limit)
+		if err != nil {
+			return nil, 0, err
+		}
+		var results []*entities.AvailableStaffResponse
+		for _, c := range *caretakers {
+			cservices := c.Cservice()
+
+			// use a set to collect unique busy hours
+			hourSet := map[int]bool{}
+
+			for _, cs := range cservices {
+				service := cs.Service()
+				if service != nil && utils.CheckSameDate(service.RdateStart, date) {
+					startHour := service.RdateStart.Hour()
+					endHour := service.RdateEnd.Hour()
+
+					for h := startHour; h < endHour; h++ {
+						hourSet[h] = true // mark hour as busy
+					}
+				}
+			}
+
+			if len(hourSet) >= 8 {
+				continue
+			}
+
+			// convert unique hours to slice
+			var busyTimeSlot []int
+			for h := range hourSet {
+				busyTimeSlot = append(busyTimeSlot, h)
+			}
+			sort.Ints(busyTimeSlot)
+
+			userData := c.Users()
+			rating, _ := c.Rating()
+			// you can now use busyTimeSlot here
+			results = append(results, &entities.AvailableStaffResponse{
+				ID:           c.UserID,
+				Name:         userData.Name,
+				BusyTimeSlot: busyTimeSlot,
+				Rating:       rating,
+			})
+		}
+		return results, amount, err
+	case "doctor":
+		return nil, 0, nil
+	default:
+		return nil, 0, nil
+	}
 }
 
 func mapToSubService(service entities.ServiceModel) *entities.SubService {
