@@ -275,7 +275,64 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 		return paged, total, nil
 
 	case "doctor":
-		return nil, 0, nil
+		doctors, err := s.DoctorRepo.FindAvailableDoctor(date)
+		if err != nil || doctors == nil {
+			return nil, 0, err
+		}
+
+		var filtered []*entities.AvailableStaffResponse
+		for _, d := range *doctors {
+			mservices := d.Mservice()
+
+			// use a set to collect unique busy hours
+			hourSet := map[int]bool{}
+
+			for _, ms := range mservices {
+				service := ms.Service()
+				if service != nil && utils.CheckSameDate(service.RdateStart, date) {
+					startHour := service.RdateStart.Hour()
+					endHour := service.RdateEnd.Hour()
+
+					for h := startHour; h < endHour; h++ {
+						hourSet[h] = true // mark hour as busy
+					}
+				}
+			}
+
+			// skip if full-day busy
+			if len(hourSet) >= 8 {
+				continue
+			}
+
+			// convert unique hours to slice
+			var busyTimeSlot []int
+			for h := range hourSet {
+				busyTimeSlot = append(busyTimeSlot, h)
+			}
+			sort.Ints(busyTimeSlot)
+
+			userData := d.Users()
+
+			filtered = append(filtered, &entities.AvailableStaffResponse{
+				ID:           d.UserID,
+				Name:         userData.Name,
+				BusyTimeSlot: busyTimeSlot,
+			})
+		}
+
+		// Apply pagination AFTER filtering
+		total := len(filtered)
+		start := offset
+		end := offset + limit
+		if start > total {
+			start = total
+		}
+		if end > total {
+			end = total
+		}
+		paged := filtered[start:end]
+
+		return paged, total, nil
 	default:
 		return nil, 0, nil
 	}

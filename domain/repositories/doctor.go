@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -19,6 +20,7 @@ type IDoctorRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
+	FindAvailableDoctor(date time.Time) (*[]db.DoctorModel, error)
 }
 
 func NewDoctorRepository(db *ds.PrismaDB) IDoctorRepository {
@@ -126,4 +128,25 @@ func (repo *doctorRepository) UpdateByID(userID string, data entities.UpdateUser
 		StartWorkTime: updatedUser.StartWorkingTime,
 		EndWorkTime:   updatedUser.EndWorkingTime,
 	}, nil
+}
+
+func (repo *doctorRepository) FindAvailableDoctor(date time.Time) (*[]db.DoctorModel, error) {
+	doctors, err := repo.Collection.Doctor.FindMany(
+		db.Doctor.Leaveday.None(
+			db.Leaveday.Leaveday.Equals(date),
+		),
+	).With(
+		db.Doctor.Mservice.Fetch().With(
+			db.Mservice.Service.Fetch(),
+		),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+	if doctors == nil {
+		return nil, nil
+	}
+
+	return &doctors, nil
 }
