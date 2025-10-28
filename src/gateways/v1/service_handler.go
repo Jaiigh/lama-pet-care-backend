@@ -88,6 +88,9 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 			Message: utils.FormatValidationError(err),
 		})
 	}
+	if req.ReserveDateEnd.Before(req.ReserveDateStart) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date cannot be earlier than the start date."})
+	}
 
 	service, err := h.ServiceService.CreateService(req)
 	if err != nil {
