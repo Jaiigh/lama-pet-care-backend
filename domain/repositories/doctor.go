@@ -139,6 +139,7 @@ func (repo *doctorRepository) FindAvailableDoctor(date time.Time) (*[]db.DoctorM
 		db.Doctor.Mservice.Fetch().With(
 			db.Mservice.Service.Fetch(),
 		),
+		db.Doctor.Users.Fetch(),
 	).Exec(repo.Context)
 
 	if err != nil {

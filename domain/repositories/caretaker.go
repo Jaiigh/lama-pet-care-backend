@@ -147,6 +147,7 @@ func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time) (*[]db.C
 		db.Caretaker.Cservice.Fetch().With(
 			db.Cservice.Service.Fetch(),
 		),
+		db.Caretaker.Users.Fetch(),
 	).OrderBy(
 		db.Caretaker.Rating.Order(db.SortOrderAsc),
 	).Exec(repo.Context)

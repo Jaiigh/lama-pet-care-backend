@@ -210,14 +210,12 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 
 func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
-
 	switch serviceType {
 	case "caretaker":
 		caretakers, err := s.CaretakerRepo.FindAvailableCaretaker(date)
 		if err != nil || caretakers == nil {
 			return nil, 0, err
 		}
-
 		var filtered []*entities.AvailableStaffResponse
 		for _, c := range *caretakers {
 			cservices := c.Cservice()
@@ -242,9 +240,11 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 
 			userData := c.Users()
 			rating, _ := c.Rating()
+			profileImage, _ := userData.ProfileImage()
 			filtered = append(filtered, &entities.AvailableStaffResponse{
 				ID:           c.UserID,
 				Name:         userData.Name,
+				Profile:      profileImage,
 				BusyTimeSlot: *busyTimeSlot,
 				Rating:       rating,
 			})
@@ -252,7 +252,6 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 
 		// Apply pagination AFTER filtering
 		paged, total := pagination(filtered, offset, limit)
-
 		return paged, total, nil
 
 	case "doctor":
@@ -284,9 +283,11 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, 
 			busyTimeSlot := convertTimeMapArray(&hourSet)
 
 			userData := d.Users()
+			profileImage, _ := userData.ProfileImage()
 			filtered = append(filtered, &entities.AvailableStaffResponse{
 				ID:           d.UserID,
 				Name:         userData.Name,
+				Profile:      profileImage,
 				BusyTimeSlot: *busyTimeSlot,
 			})
 		}
@@ -323,17 +324,13 @@ func calDefaultLimitAndOffset(page, limit int) (int, int) {
 }
 
 func GetUniqueBusyTimeSlots(rdateStart, rdateEnd, targetDate time.Time, hourSet map[int]bool) *map[int]bool {
-	if !utils.CheckSameDate(rdateStart, targetDate) {
-		return nil
+	if utils.CheckSameDate(rdateStart, targetDate) {
+		startHour := rdateStart.Hour()
+		endHour := rdateEnd.Hour()
+		for h := startHour; h < endHour; h++ {
+			hourSet[h] = true
+		}
 	}
-
-	startHour := rdateStart.Hour()
-	endHour := rdateEnd.Hour()
-
-	for h := startHour; h < endHour; h++ {
-		hourSet[h] = true
-	}
-
 	return &hourSet
 }
 

@@ -416,9 +416,10 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
 		Data: fiber.Map{
-			"page":     page,
-			"amount":   amount,
-			"services": res,
+			"page":      page,
+			"amount":    amount,
+			"displayed": len(res),
+			"staff":     res,
 		},
 		Status: fiber.StatusOK,
 	})
