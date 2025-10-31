@@ -3,7 +3,6 @@ package gateways
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -376,9 +375,9 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        serviceType query string true "Staff category to check availability for (caretaker or doctor)"
-// @Param        date  query string  true "Date to check availability (format: YYYY-MM-DD, e.g. 2025-10-28)"
 // @Param        page  query int    false "Page number for pagination" [optional default: 1]
 // @Param        limit query int    false "Number of items per page" [optional default: 5]
+// @Param        body body entities.GetAvailableStaffRequest true "service startDate and endDate"
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      403 {object} entities.ResponseMessage "Invalid role"
@@ -396,23 +395,25 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	}
 
 	serviceType := ctx.Query("serviceType")
-	dateStr := ctx.Query("date")
 	page := ctx.QueryInt("page", 1)
 	limit := ctx.QueryInt("limit", 5)
+	var dates entities.RDateRange
+	if err := ctx.BodyParser(&dates); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+	if err := validator.New().Struct(dates); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
+			Message: utils.FormatValidationError(err),
+		})
+	}
 
 	if serviceType != "caretaker" && serviceType != "doctor" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid service type, expected 'caretaker' or 'doctor'",
 		})
 	}
-	date, err := time.Parse("2006-01-02", dateStr) // <-- for YYYY-MM-DD format
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid date or date format, expected YYYY-MM-DD",
-		})
-	}
 
-	res, amount, err := h.ServiceService.FindAvailableStaff(serviceType, date, page, limit)
+	res, amount, err := h.ServiceService.FindAvailableStaff(serviceType, dates, page, limit)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}

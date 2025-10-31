@@ -5,7 +5,6 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
-	"time"
 
 	"fmt"
 )
@@ -20,7 +19,7 @@ type ICaretakerRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
-	FindAvailableCaretaker(date time.Time) (*[]db.CaretakerModel, error)
+	FindAvailableCaretaker(dates entities.RDateRange) (*[]db.CaretakerModel, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -138,10 +137,17 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 	}, nil
 }
 
-func (repo *caretakerRepository) FindAvailableCaretaker(date time.Time) (*[]db.CaretakerModel, error) {
+func (repo *caretakerRepository) FindAvailableCaretaker(dates entities.RDateRange) (*[]db.CaretakerModel, error) {
 	caretakers, err := repo.Collection.Caretaker.FindMany(
 		db.Caretaker.Leaveday.None(
-			db.Leaveday.Leaveday.Equals(date),
+			db.Leaveday.Leaveday.Gte(dates.StartDate),
+			db.Leaveday.Leaveday.Lte(dates.EndDate),
+		),
+		db.Caretaker.Cservice.None(
+			db.Cservice.Service.Where(
+				db.Service.RdateStart.Lte(dates.EndDate),
+				db.Service.RdateEnd.Gte(dates.StartDate),
+			),
 		),
 	).With(
 		db.Caretaker.Cservice.Fetch().With(
