@@ -377,12 +377,12 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Param        serviceType query string true "Staff category to check availability for (caretaker or doctor)"
 // @Param        page  query int    false "Page number for pagination" [optional default: 1]
 // @Param        limit query int    false "Number of items per page" [optional default: 5]
-// @Param        body body entities.GetAvailableStaffRequest true "service startDate and endDate"
+// @Param        body body entities.RDateRange true "service startDate and endDate"
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      403 {object} entities.ResponseMessage "Invalid role"
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
-// @Router       /services/staff [get]
+// @Router       /services/staff [post]
 func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil || token.Purpose != "access" {
@@ -413,17 +413,16 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		})
 	}
 
-	res, amount, err := h.ServiceService.FindAvailableStaff(serviceType, dates, page, limit)
+	res, err := h.ServiceService.FindAvailableStaff(serviceType, dates, page, limit)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
 		Data: fiber.Map{
-			"page":      page,
-			"amount":    amount,
-			"displayed": len(res),
-			"staff":     res,
+			"page":   page,
+			"amount": len(res),
+			"staff":  res,
 		},
 		Status: fiber.StatusOK,
 	})

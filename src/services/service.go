@@ -2,13 +2,10 @@ package services
 
 import (
 	"fmt"
-	"sort"
-	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
-	"lama-backend/src/utils"
 )
 
 type ServiceService struct {
@@ -30,7 +27,7 @@ type IServiceService interface {
 	FindServicesByCaretakerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
-	FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error)
+	FindAvailableStaff(serviceType string, dates entities.RDateRange, page, limit int) ([]*entities.AvailableStaffResponse, error)
 }
 
 func NewServiceService(
@@ -208,97 +205,25 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 	return s.Repo.UpdateStatus(serviceID, status)
 }
 
-func (s *ServiceService) FindAvailableStaff(serviceType string, date time.Time, page, limit int) ([]*entities.AvailableStaffResponse, int, error) {
+func (s *ServiceService) FindAvailableStaff(serviceType string, dates entities.RDateRange, page, limit int) ([]*entities.AvailableStaffResponse, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
+	var staff []*entities.AvailableStaffResponse
+	var err error
 	switch serviceType {
 	case "caretaker":
-		caretakers, err := s.CaretakerRepo.FindAvailableCaretaker(date)
-		if err != nil || caretakers == nil {
-			return nil, 0, err
+		staff, err = s.CaretakerRepo.FindAvailableCaretaker(dates, offset, limit)
+		if err != nil {
+			return nil, err
 		}
-		var filtered []*entities.AvailableStaffResponse
-		for _, c := range *caretakers {
-			cservices := c.Cservice()
-
-			// use a set to collect unique busy hours
-			hourSet := map[int]bool{}
-
-			for _, cs := range cservices {
-				service := cs.Service()
-				if service != nil {
-					hourSet = *GetUniqueBusyTimeSlots(service.RdateStart, service.RdateEnd, date, hourSet)
-				}
-			}
-
-			// skip if full-day busy
-			if len(hourSet) >= 8 {
-				continue
-			}
-
-			// convert unique hours to slice
-			busyTimeSlot := convertTimeMapArray(&hourSet)
-
-			userData := c.Users()
-			rating, _ := c.Rating()
-			profileImage, _ := userData.ProfileImage()
-			filtered = append(filtered, &entities.AvailableStaffResponse{
-				ID:           c.UserID,
-				Name:         userData.Name,
-				Profile:      profileImage,
-				BusyTimeSlot: *busyTimeSlot,
-				Rating:       rating,
-			})
-		}
-
-		// Apply pagination AFTER filtering
-		paged, total := pagination(filtered, offset, limit)
-		return paged, total, nil
-
 	case "doctor":
-		doctors, err := s.DoctorRepo.FindAvailableDoctor(date)
-		if err != nil || doctors == nil {
-			return nil, 0, err
+		staff, err = s.DoctorRepo.FindAvailableDoctor(dates, offset, limit)
+		if err != nil {
+			return nil, err
 		}
-
-		var filtered []*entities.AvailableStaffResponse
-		for _, d := range *doctors {
-			mservices := d.Mservice()
-
-			// use a set to collect unique busy hours
-			hourSet := map[int]bool{}
-
-			for _, ms := range mservices {
-				service := ms.Service()
-				if service != nil {
-					hourSet = *GetUniqueBusyTimeSlots(service.RdateStart, service.RdateEnd, date, hourSet)
-				}
-			}
-
-			// skip if full-day busy
-			if len(hourSet) >= 8 {
-				continue
-			}
-
-			// convert unique hours to slice
-			busyTimeSlot := convertTimeMapArray(&hourSet)
-
-			userData := d.Users()
-			profileImage, _ := userData.ProfileImage()
-			filtered = append(filtered, &entities.AvailableStaffResponse{
-				ID:           d.UserID,
-				Name:         userData.Name,
-				Profile:      profileImage,
-				BusyTimeSlot: *busyTimeSlot,
-			})
-		}
-
-		// Apply pagination AFTER filtering
-		paged, total := pagination(filtered, offset, limit)
-
-		return paged, total, nil
 	default:
-		return nil, 0, nil
+		return nil, nil
 	}
+	return staff, nil
 }
 
 func mapToSubService(service entities.ServiceModel) *entities.SubService {
@@ -321,38 +246,4 @@ func calDefaultLimitAndOffset(page, limit int) (int, int) {
 	}
 	//return offset, limit
 	return (page - 1) * limit, limit
-}
-
-func GetUniqueBusyTimeSlots(rdateStart, rdateEnd, targetDate time.Time, hourSet map[int]bool) *map[int]bool {
-	if utils.CheckSameDate(rdateStart, targetDate) {
-		startHour := rdateStart.Hour()
-		endHour := rdateEnd.Hour()
-		for h := startHour; h < endHour; h++ {
-			hourSet[h] = true
-		}
-	}
-	return &hourSet
-}
-
-func convertTimeMapArray(uniqueTime *map[int]bool) *[]int {
-	var busyTimeSlot []int
-	for h := range *uniqueTime {
-		busyTimeSlot = append(busyTimeSlot, h)
-	}
-	sort.Ints(busyTimeSlot)
-	return &busyTimeSlot
-}
-
-func pagination(filtered []*entities.AvailableStaffResponse, offset, limit int) ([]*entities.AvailableStaffResponse, int) {
-	total := len(filtered)
-	start := offset
-	end := offset + limit
-	if start > total {
-		start = total
-	}
-	if end > total {
-		end = total
-	}
-	paged := filtered[start:end]
-	return paged, total
 }

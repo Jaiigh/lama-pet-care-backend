@@ -19,7 +19,7 @@ type ICaretakerRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
-	FindAvailableCaretaker(dates entities.RDateRange) (*[]db.CaretakerModel, error)
+	FindAvailableCaretaker(dates entities.RDateRange, offset, limit int) ([]*entities.AvailableStaffResponse, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -137,7 +137,7 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 	}, nil
 }
 
-func (repo *caretakerRepository) FindAvailableCaretaker(dates entities.RDateRange) (*[]db.CaretakerModel, error) {
+func (repo *caretakerRepository) FindAvailableCaretaker(dates entities.RDateRange, offset, limit int) ([]*entities.AvailableStaffResponse, error) {
 	caretakers, err := repo.Collection.Caretaker.FindMany(
 		db.Caretaker.Leaveday.None(
 			db.Leaveday.Leaveday.Gte(dates.StartDate),
@@ -145,25 +145,45 @@ func (repo *caretakerRepository) FindAvailableCaretaker(dates entities.RDateRang
 		),
 		db.Caretaker.Cservice.None(
 			db.Cservice.Service.Where(
-				db.Service.RdateStart.Lte(dates.EndDate),
-				db.Service.RdateEnd.Gte(dates.StartDate),
+				db.Service.Or(
+					db.Service.Status.Equals("finish"),
+					db.Service.And(
+						db.Service.RdateStart.Lt(dates.EndDate),
+						db.Service.RdateEnd.Gt(dates.StartDate),
+					),
+				),
 			),
 		),
 	).With(
-		db.Caretaker.Cservice.Fetch().With(
-			db.Cservice.Service.Fetch(),
-		),
+		// db.Caretaker.Cservice.Fetch().With(
+		// 	db.Cservice.Service.Fetch(),
+		// ),
 		db.Caretaker.Users.Fetch(),
 	).OrderBy(
 		db.Caretaker.Rating.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
 		return nil, fmt.Errorf("users -> FindByID: %v", err)
 	}
-	if caretakers == nil {
+	if len(caretakers) == 0 { //len(nil) = 0
 		return nil, nil
 	}
 
-	return &caretakers, nil
+	results := make([]*entities.AvailableStaffResponse, 0, len(caretakers))
+	for _, c := range caretakers {
+		user := c.Users()
+		rating, _ := c.Rating()
+		profile, _ := user.ProfileImage()
+		entity := entities.AvailableStaffResponse{
+			ID:      c.UserID,
+			Name:    user.Name,
+			Profile: profile,
+			Rating:  rating,
+		}
+
+		results = append(results, &entity)
+	}
+
+	return results, nil
 }

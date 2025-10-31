@@ -577,7 +577,7 @@ const docTemplate = `{
             }
         },
         "/services/staff": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -600,13 +600,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Date to check availability (format: YYYY-MM-DD, e.g. 2025-10-28)",
-                        "name": "date",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "type": "integer",
                         "description": "Page number for pagination",
                         "name": "page",
@@ -617,6 +610,15 @@ const docTemplate = `{
                         "description": "Number of items per page",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "description": "service startDate and endDate",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.RDateRange"
+                        }
                     }
                 ],
                 "responses": {
@@ -1190,6 +1192,21 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.RDateRange": {
+            "type": "object",
+            "required": [
+                "end_date",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
                     "type": "string"
                 }
             }
