@@ -140,16 +140,13 @@ func (repo *doctorRepository) FindAvailableDoctor(dates entities.RDateRange, off
 				db.Service.Or(
 					db.Service.Status.Equals("finish"),
 					db.Service.And(
-						db.Service.RdateStart.Lt(dates.EndDate),
-						db.Service.RdateEnd.Gt(dates.StartDate),
+						db.Service.RdateStart.Lte(dates.EndDate),
+						db.Service.RdateEnd.Gte(dates.StartDate),
 					),
 				),
 			),
 		),
 	).With(
-		// db.Doctor.Mservice.Fetch().With(
-		// 	db.Mservice.Service.Fetch(),
-		// ),
 		db.Doctor.Users.Fetch(),
 	).Skip(offset).Take(limit).Exec(repo.Context)
 

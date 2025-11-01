@@ -148,16 +148,13 @@ func (repo *caretakerRepository) FindAvailableCaretaker(dates entities.RDateRang
 				db.Service.Or(
 					db.Service.Status.Equals("finish"),
 					db.Service.And(
-						db.Service.RdateStart.Lt(dates.EndDate),
-						db.Service.RdateEnd.Gt(dates.StartDate),
+						db.Service.RdateStart.Lte(dates.EndDate),
+						db.Service.RdateEnd.Gte(dates.StartDate),
 					),
 				),
 			),
 		),
 	).With(
-		// db.Caretaker.Cservice.Fetch().With(
-		// 	db.Cservice.Service.Fetch(),
-		// ),
 		db.Caretaker.Users.Fetch(),
 	).OrderBy(
 		db.Caretaker.Rating.Order(db.SortOrderAsc),
