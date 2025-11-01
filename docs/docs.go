@@ -577,7 +577,7 @@ const docTemplate = `{
             }
         },
         "/services/staff": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -594,31 +594,24 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff category to check availability for (caretaker or doctor)",
+                        "description": "Service type to check availability for (cservice or mservice)",
                         "name": "serviceType",
                         "in": "query",
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
+                        "type": "string",
+                        "description": "service start date (format: YYYY-MM-DD)",
+                        "name": "startDate",
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "description": "service startDate and endDate",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.RDateRange"
-                        }
+                        "type": "string",
+                        "description": "service end date (format: YYYY-MM-DD)",
+                        "name": "endDate",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -626,6 +619,91 @@ const docTemplate = `{
                         "description": "Request successful",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/services/staff/{staffID}/time": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all busy time slot for a specific staff on a given day.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Get busy time slot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service type to check availability for (cservice or mservice)",
+                        "name": "serviceType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service start date (format: YYYY-MM-DD)",
+                        "name": "startDate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service end date (format: YYYY-MM-DD)",
+                        "name": "endDate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "StaffID",
+                        "name": "staffID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
                     "401": {
@@ -1192,21 +1270,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.RDateRange": {
-            "type": "object",
-            "required": [
-                "end_date",
-                "start_date"
-            ],
-            "properties": {
-                "end_date": {
-                    "type": "string"
-                },
-                "start_date": {
                     "type": "string"
                 }
             }
