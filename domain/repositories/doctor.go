@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -19,6 +20,8 @@ type IDoctorRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
+	FindAvailableDoctor(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
+	FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error)
 }
 
 func NewDoctorRepository(db *ds.PrismaDB) IDoctorRepository {
@@ -126,4 +129,72 @@ func (repo *doctorRepository) UpdateByID(userID string, data entities.UpdateUser
 		StartWorkTime: updatedUser.StartWorkingTime,
 		EndWorkTime:   updatedUser.EndWorkingTime,
 	}, nil
+}
+
+func (repo *doctorRepository) FindAvailableDoctor(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error) {
+	doctors, err := repo.Collection.Doctor.FindMany(
+		db.Doctor.Leaveday.None(
+			db.Leaveday.Leaveday.Gte(startDate),
+			db.Leaveday.Leaveday.Lte(endDate),
+		),
+		db.Doctor.Mservice.None(
+			db.Mservice.Service.Where(
+				db.Service.Or(
+					db.Service.Status.Equals("finish"),
+					db.Service.And(
+						db.Service.RdateStart.Lte(endDate),
+						db.Service.RdateEnd.Gte(startDate),
+					),
+				),
+			),
+		),
+	).With(
+		db.Doctor.Users.Fetch(),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+	if len(doctors) == 0 { //len(nil) = 0
+		return nil, nil
+	}
+
+	results := make([]*entities.AvailableStaffResponse, 0, len(doctors))
+	for _, d := range doctors {
+		user := d.Users()
+		profile, _ := user.ProfileImage()
+		entity := entities.AvailableStaffResponse{
+			ID:      d.UserID,
+			Name:    user.Name,
+			Profile: profile,
+		}
+
+		results = append(results, &entity)
+	}
+
+	return results, nil
+}
+
+func (repo *doctorRepository) FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error) {
+	services, err := repo.Collection.Service.FindMany(
+		db.Service.Mservice.Where(
+			db.Mservice.Did.Equals(staffID),
+		),
+		db.Service.Or(
+			db.Service.And(
+				db.Service.RdateStart.Gt(endDate00),
+				db.Service.RdateStart.Lt(endDate23),
+			),
+			db.Service.And(
+				db.Service.RdateEnd.Gt(startDate00),
+				db.Service.RdateEnd.Lt(startDate23),
+			),
+		),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+
+	return &services, nil
 }

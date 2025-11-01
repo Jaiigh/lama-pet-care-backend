@@ -38,7 +38,8 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 	createdService, err := repo.Collection.Service.CreateOne(
 		db.Service.Price.Set(data.Price),
 		db.Service.Status.Set(db.ServiceStatus(data.Status)),
-		db.Service.Rdate.Set(data.ReserveDate),
+		db.Service.RdateStart.Set(data.ReserveDateStart),
+		db.Service.RdateEnd.Set(data.ReserveDateEnd),
 		db.Service.Owner.Link(db.Owner.UserID.Equals(data.OwnerID)),
 		db.Service.Payment.Link(db.Payment.Payid.Equals(data.PaymentID)),
 		db.Service.Pet.Link(db.Pet.Petid.Equals(data.PetID)),
@@ -93,8 +94,11 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	if data.Status != nil {
 		updates = append(updates, db.Service.Status.Set(db.ServiceStatus(*data.Status)))
 	}
-	if data.ReserveDate != nil {
-		updates = append(updates, db.Service.Rdate.Set(*data.ReserveDate))
+	if data.ReserveDateStart != nil {
+		updates = append(updates, db.Service.RdateStart.Set(*data.ReserveDateStart))
+	}
+	if data.ReserveDateEnd != nil {
+		updates = append(updates, db.Service.RdateEnd.Set(*data.ReserveDateEnd))
 	}
 	if data.OwnerID != nil {
 		updates = append(updates, db.Service.Owner.Link(db.Owner.UserID.Equals(*data.OwnerID)))
@@ -134,45 +138,23 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
 	}
-	if status != "" && status != "all" {
-		if serviceStatus, ok := toServiceStatus(status); ok {
-			params = append(params, db.Service.Status.Equals(serviceStatus))
-		}
-	}
+	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
 		limit = 31
-		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 1, 0)
-		params = append(params, db.Service.Rdate.Gte(startDate))
-		params = append(params, db.Service.Rdate.Lt(endDate))
+		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
-		db.Service.Rdate.Order(db.SortOrderAsc),
+		db.Service.RdateStart.Order(db.SortOrderAsc),
 	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
 	}
-	var result []*entities.ServiceModel
-	if month > 0 && year > 0 {
-		uniqueDays := make(map[int]bool)
-		for i := range services {
-			day := services[i].Rdate.Day()
-			if !uniqueDays[day] {
-				result = append(result, mapServiceModel(&services[i]))
-				fmt.Println("Adding service for day:", day)
-				uniqueDays[day] = true
-			}
-		}
-	} else {
-		for i := range services {
-			result = append(result, mapServiceModel(&services[i]))
-		}
-	}
-	return result, nil
+
+	return filterUniqueDays(services, month, year)
 }
 
 func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
@@ -181,44 +163,23 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 			db.Mservice.Did.Equals(doctorID),
 		),
 	}
-	if status != "" && status != "all" {
-		if serviceStatus, ok := toServiceStatus(status); ok {
-			params = append(params, db.Service.Status.Equals(serviceStatus))
-		}
-	}
+	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
 		limit = 31
-		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 1, 0)
-		params = append(params, db.Service.Rdate.Gte(startDate))
-		params = append(params, db.Service.Rdate.Lt(endDate))
+		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
-		db.Service.Rdate.Order(db.SortOrderAsc),
+		db.Service.RdateStart.Order(db.SortOrderAsc),
 	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
 	}
-	var result []*entities.ServiceModel
-	if month > 0 && year > 0 {
-		uniqueDays := make(map[int]bool)
-		for i := range services {
-			day := services[i].Rdate.Day()
-			if !uniqueDays[day] {
-				result = append(result, mapServiceModel(&services[i]))
-				uniqueDays[day] = true
-			}
-		}
-	} else {
-		for i := range services {
-			result = append(result, mapServiceModel(&services[i]))
-		}
-	}
-	return result, nil
+
+	return filterUniqueDays(services, month, year)
 }
 
 func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
@@ -227,87 +188,45 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 			db.Cservice.Cid.Equals(caretakerID),
 		),
 	}
-	if status != "" && status != "all" {
-		if serviceStatus, ok := toServiceStatus(status); ok {
-			params = append(params, db.Service.Status.Equals(serviceStatus))
-		}
-	}
+	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
 		limit = 31
-		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 1, 0)
-		params = append(params, db.Service.Rdate.Gte(startDate))
-		params = append(params, db.Service.Rdate.Lt(endDate))
+		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
-		db.Service.Rdate.Order(db.SortOrderAsc),
+		db.Service.RdateStart.Order(db.SortOrderAsc),
 	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
 	}
-	var result []*entities.ServiceModel
-	if month > 0 && year > 0 {
-		uniqueDays := make(map[int]bool)
-		for i := range services {
-			day := services[i].Rdate.Day()
-			if !uniqueDays[day] {
-				result = append(result, mapServiceModel(&services[i]))
-				uniqueDays[day] = true
-			}
-		}
-	} else {
-		for i := range services {
-			result = append(result, mapServiceModel(&services[i]))
-		}
-	}
-	return result, nil
+
+	return filterUniqueDays(services, month, year)
 }
 
 func (repo *serviceRepository) FindAll(status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{}
 
-	if status != "" && status != "all" {
-		if serviceStatus, ok := toServiceStatus(status); ok {
-			params = append(params, db.Service.Status.Equals(serviceStatus))
-		}
-	}
+	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
 		limit = 31
-		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 1, 0)
-		params = append(params, db.Service.Rdate.Gte(startDate))
-		params = append(params, db.Service.Rdate.Lt(endDate))
+		params = addRDateRangeParams(params, month, year)
 	}
 
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
-		db.Service.Rdate.Order(db.SortOrderAsc),
+		db.Service.RdateStart.Order(db.SortOrderAsc),
 	).Skip(offset).Take(limit).Exec(repo.Context)
 	if err != nil {
 		return nil, err
 	}
-	var result []*entities.ServiceModel
-	if month > 0 && year > 0 {
-		uniqueDays := make(map[int]bool)
-		for i := range services {
-			day := services[i].Rdate.Day()
-			if !uniqueDays[day] {
-				result = append(result, mapServiceModel(&services[i]))
-				uniqueDays[day] = true
-			}
-		}
-	} else {
-		for i := range services {
-			result = append(result, mapServiceModel(&services[i]))
-		}
-	}
-	return result, nil
+
+	return filterUniqueDays(services, month, year)
 }
 
 func (repo *serviceRepository) UpdateStatus(serviceID, status string) error {
@@ -334,13 +253,14 @@ func (repo *serviceRepository) UpdateStatus(serviceID, status string) error {
 
 func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 	result := &entities.ServiceModel{
-		Sid:         model.Sid,
-		OwnerID:     model.Oid,
-		PetID:       model.Petid,
-		PaymentID:   model.Payid,
-		Price:       model.Price,
-		Status:      model.Status,
-		ReserveDate: model.Rdate,
+		Sid:              model.Sid,
+		OwnerID:          model.Oid,
+		PetID:            model.Petid,
+		PaymentID:        model.Payid,
+		Price:            model.Price,
+		Status:           model.Status,
+		ReserveDateStart: model.RdateStart,
+		ReserveDateEnd:   model.RdateEnd,
 	}
 
 	if cservice, ok := model.Cservice(); ok {
@@ -373,4 +293,64 @@ func toServiceStatus(s string) (db.ServiceStatus, bool) {
 	default:
 		return "", false // Return an empty value and false if the string is not a valid status
 	}
+}
+
+func filterUniqueDays(services []db.ServiceModel, month, year int) ([]*entities.ServiceModel, error) {
+	var result []*entities.ServiceModel
+	var serviceAdded bool
+	if month > 0 && year > 0 {
+		uniqueDays := make(map[int]bool)
+		for i := range services {
+			serviceAdded = false
+			if services[i].RdateStart.Year() == year && services[i].RdateStart.Month() == time.Month(month) {
+				startDay := services[i].RdateStart.Day()
+				if !uniqueDays[startDay] {
+					result = append(result, mapServiceModel(&services[i]))
+					serviceAdded = true
+					uniqueDays[startDay] = true
+				}
+			}
+			if services[i].RdateEnd.Year() == year && services[i].RdateEnd.Month() == time.Month(month) {
+				endDay := services[i].RdateEnd.Day()
+				if !uniqueDays[endDay] {
+					if !serviceAdded {
+						result = append(result, mapServiceModel(&services[i]))
+					}
+					uniqueDays[endDay] = true
+				}
+			}
+		}
+	} else {
+		for i := range services {
+			result = append(result, mapServiceModel(&services[i]))
+		}
+	}
+	return result, nil
+}
+
+func addServiceStatusParams(params []db.ServiceWhereParam, status string) []db.ServiceWhereParam {
+	if status != "" && status != "all" {
+		if serviceStatus, ok := toServiceStatus(status); ok {
+			params = append(params, db.Service.Status.Equals(serviceStatus))
+		}
+	}
+	return params
+}
+
+func addRDateRangeParams(params []db.ServiceWhereParam, month, year int) []db.ServiceWhereParam {
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, 0)
+	params = append(params,
+		db.Service.Or(
+			db.Service.And(
+				db.Service.RdateStart.Gte(startDate),
+				db.Service.RdateStart.Lt(endDate),
+			),
+			db.Service.And(
+				db.Service.RdateEnd.Gte(startDate),
+				db.Service.RdateEnd.Lt(endDate),
+			),
+		),
+	)
+	return params
 }

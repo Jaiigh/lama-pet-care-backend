@@ -376,6 +376,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/leaveday/{day}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create Staff leaveday by token and day params (format: YYYY-MM-DD)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Leaveday"
+                ],
+                "summary": "Create Leaveday",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "leaveday",
+                        "name": "day",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request successfully",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/services": {
             "get": {
                 "security": [
@@ -499,6 +563,157 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/services/staff": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all staff members available for a specific service type on a given day.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Get available staff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service type to check availability for (cservice or mservice)",
+                        "name": "serviceType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service start date (format: YYYY-MM-DD)",
+                        "name": "startDate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service end date (format: YYYY-MM-DD)",
+                        "name": "endDate",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/services/staff/{staffID}/time": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all busy time slot for a specific staff on a given day.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Get busy time slot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service type to check availability for (cservice or mservice)",
+                        "name": "serviceType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service start date (format: YYYY-MM-DD)",
+                        "name": "startDate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service end date (format: YYYY-MM-DD)",
+                        "name": "endDate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "StaffID",
+                        "name": "staffID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
@@ -899,7 +1114,7 @@ const docTemplate = `{
                     "400": {
                         "description": "picture file is required",
                         "schema": {
-                            "$ref": "#/definitions/entities.ResponseErrorMessage"
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
                     "401": {
@@ -911,7 +1126,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/entities.ResponseErrorMessage"
+                            "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     }
                 }
@@ -939,7 +1154,8 @@ const docTemplate = `{
             "required": [
                 "pet_id",
                 "price",
-                "reserve_date",
+                "reserve_date_end",
+                "reserve_date_start",
                 "service_type",
                 "staff_id",
                 "status"
@@ -967,7 +1183,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 0
                 },
-                "reserve_date": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
                     "type": "string"
                 },
                 "service_type": {
@@ -1055,14 +1274,6 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.ResponseErrorMessage": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
         "entities.ResponseMessage": {
             "type": "object",
             "properties": {
@@ -1119,7 +1330,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 0
                 },
-                "reserve_date": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
                     "type": "string"
                 },
                 "score": {

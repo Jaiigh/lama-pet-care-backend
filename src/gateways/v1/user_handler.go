@@ -112,9 +112,9 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 // @Produce json
 // @Param profile formData file true "user profile picture"
 // @Success 200 {object} entities.UserDataModel "Request successful"
-// @Failure 400 {object} entities.ResponseErrorMessage "picture file is required"
+// @Failure 400 {object} entities.ResponseMessage "picture file is required"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
-// @Failure 500 {object} entities.ResponseErrorMessage "Internal Server Error"
+// @Failure 500 {object} entities.ResponseMessage "Internal Server Error"
 // @Router /user/profile [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
@@ -125,15 +125,15 @@ func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
 
 	file, err := ctx.FormFile("profile")
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseErrorMessage{
-			Error: "picture file is required",
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "picture file is required",
 		})
 	}
 
 	pictureString, err := utils.UploadToSupabase(file, token.UserID)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseErrorMessage{
-			Error: "failed to upload picture: " + err.Error(),
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
+			Message: "failed to upload picture: " + err.Error(),
 		})
 	}
 
@@ -142,8 +142,8 @@ func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
 
 	updatedUser, err := h.UsersService.UpdateUsersByID(token.UserID, updateData)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseErrorMessage{
-			Error: err.Error(),
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
+			Message: err.Error(),
 		})
 	}
 

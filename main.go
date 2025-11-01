@@ -56,6 +56,7 @@ func main() {
 	mserviceRepo := repo.NewMServiceRepository(prismadb)
 	cserviceRepo := repo.NewCServiceRepository(prismadb)
 	paymentRepo := repo.NewPaymentRepository(prismadb)
+	leavedayRepo := repo.NewLeavedayRepository(prismadb)
 
 	authService := sv.NewAuthService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
 	usersService := sv.NewUsersService(usersRepo, ownerRepo, caretakerRepo, doctorRepo)
@@ -63,8 +64,9 @@ func main() {
 	doctorService := sv.NewDoctorService(doctorRepo)
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
 	serviceService := sv.NewServiceService(serviceRepo, caretakerRepo, doctorRepo, mserviceRepo, cserviceRepo, paymentRepo)
+	leavedayService := sv.NewLeavedayService(leavedayRepo)
 
-	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService)
+	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService, leavedayService)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 

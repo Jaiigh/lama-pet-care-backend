@@ -18,53 +18,56 @@ model Users {
   birthdate        DateTime @db.Date
   telephone_number String   @db.VarChar(10)
   address          String
-  profile_image   String?
+  profile_image    String?
 
-  Caretaker       Caretaker?
-  Doctor          Doctor?
-  Owner           Owner?
+  Caretaker Caretaker?
+  Doctor    Doctor?
+  Owner     Owner?
 
   @@unique([email, role], name: "Users_email_role_key")
   @@unique([telephone_number, role], name: "Users_telephone_number_role_key")
+  @@index([email])
 }
 
 model Caretaker {
-  user_id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   specialties        String?
-  start_working_time DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
-  end_working_time   DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
-  rating             Decimal?   @db.Decimal(2, 1)
+  start_working_time DateTime @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
+  end_working_time   DateTime @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
+  rating             Decimal? @db.Decimal(2, 1)
 
-  Users              Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  Cservice           Cservice[]
+  Users    Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  Cservice Cservice[]
+  Leaveday Leaveday[]
 }
 
 model Cservice {
-  score     Int
-  comment   String?
-  SID       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  CID       String    @db.Uuid
+  score   Int
+  comment String?
+  SID     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  CID     String  @db.Uuid
 
   Caretaker Caretaker @relation(fields: [CID], references: [user_id], onDelete: Cascade)
   Service   Service   @relation(fields: [SID], references: [SID], onDelete: Cascade)
 }
 
 model Doctor {
-  user_id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  license_number     String     @unique
-  start_date         DateTime   @default(dbgenerated("'0001-01-01'::date")) @db.Date
-  start_working_time DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
-  end_working_time   DateTime   @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
+  user_id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  license_number     String   @unique
+  start_date         DateTime @default(dbgenerated("'0001-01-01'::date")) @db.Date
+  start_working_time DateTime @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
+  end_working_time   DateTime @default(dbgenerated("'00:00:00'::time without time zone")) @db.Time(6)
 
-  Users              Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  Mservice           Mservice[]
+  Users    Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  Mservice Mservice[]
+  Leaveday Leaveday[]
 }
 
 model Medicine {
   mediname String
-  SID      String  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  SID      String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  Service  Service @relation(fields: [SID], references: [SID], onDelete: Cascade)
+  Service Service @relation(fields: [SID], references: [SID], onDelete: Cascade)
 
   @@id([mediname, SID])
 }
@@ -79,14 +82,14 @@ model Mservice {
 }
 
 model Owner {
-  user_id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  total_spending   Decimal  @db.Decimal(12, 2) @default(0)
+  user_id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  total_spending Decimal @default(0) @db.Decimal(12, 2)
 
-  Payment          Payment[]
-  Pet              Pet[]
-  Service          Service[]
+  Payment Payment[]
+  Pet     Pet[]
+  Service Service[]
 
-  Users            Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  Users Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Payment {
@@ -96,39 +99,54 @@ model Payment {
   PAYID    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   OID      String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  Owner    Owner          @relation(fields: [OID], references: [user_id], onDelete: Cascade)
-  Service  Service[]
+  Owner   Owner     @relation(fields: [OID], references: [user_id], onDelete: Cascade)
+  Service Service[]
 }
 
 model Pet {
   breed     String?
   name      String?
-  birthdate DateTime  @db.Date
-  weight    Decimal   @db.Decimal(5, 2)
+  birthdate DateTime @db.Date
+  weight    Decimal  @db.Decimal(5, 2)
   kind      String
   sex       pet_sex
-  OID       String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PETID     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  OID       String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PETID     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  Owner     Owner     @relation(fields: [OID], references: [user_id], onDelete: Cascade)
-  Service   Service[]
+  Owner   Owner     @relation(fields: [OID], references: [user_id], onDelete: Cascade)
+  Service Service[]
 }
 
 model Service {
   price  Int
   status service_status
-  rdate  DateTime @db.Timestamptz(6)
-  SID    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PETID  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PAYID  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  OID    String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rdate_start  DateTime       @db.Timestamptz(6)
+  rdate_end  DateTime       @db.Timestamptz(6)
+  SID    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PETID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PAYID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  OID    String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   Cservice Cservice?
   Medicine Medicine[]
   Mservice Mservice?
-  Owner    Owner   @relation(fields: [OID], references: [user_id], onDelete: Cascade)
-  Payment  Payment @relation(fields: [PAYID], references: [PAYID], onDelete: Cascade)
-  Pet      Pet     @relation(fields: [PETID], references: [PETID], onDelete: Cascade)
+  Owner    Owner      @relation(fields: [OID], references: [user_id], onDelete: Cascade)
+  Payment  Payment    @relation(fields: [PAYID], references: [PAYID], onDelete: Cascade)
+  Pet      Pet        @relation(fields: [PETID], references: [PETID], onDelete: Cascade)
+}
+
+model Leaveday {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  CID      String?  @db.Uuid
+  DID      String?  @db.Uuid
+  leaveday DateTime @db.Date
+
+  Caretaker Caretaker? @relation(fields: [CID], references: [user_id], onDelete: Cascade)
+  Doctor    Doctor?    @relation(fields: [DID], references: [user_id], onDelete: Cascade)
+
+  @@unique([CID, leaveday], name: "Leaveday_CID_leaveday_key")
+  @@unique([DID, leaveday], name: "Leaveday_DID_leaveday_key")
+  @@index([leaveday])
 }
 
 enum payment_status {

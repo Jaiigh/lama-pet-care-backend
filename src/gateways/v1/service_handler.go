@@ -2,6 +2,7 @@ package gateways
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"lama-backend/domain/entities"
@@ -87,6 +88,9 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 			Message: utils.FormatValidationError(err),
 		})
 	}
+	if req.ReserveDateEnd.Before(req.ReserveDateStart) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date cannot be earlier than the start date."})
+	}
 
 	service, err := h.ServiceService.CreateService(req)
 	if err != nil {
@@ -158,7 +162,8 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 		req.PetID == nil &&
 		req.Price == nil &&
 		req.Status == nil &&
-		req.ReserveDate == nil &&
+		req.ReserveDateStart == nil &&
+		req.ReserveDateEnd == nil &&
 		req.StaffID == nil &&
 		req.Disease == nil &&
 		req.Comment == nil {
@@ -362,5 +367,130 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 			"status":     status,
 		},
 		Status: fiber.StatusOK,
+	})
+}
+
+// @Summary      Get available staff
+// @Description  Retrieve all staff members available for a specific service type on a given day.
+// @Tags         service
+// @Produce      json
+// @Security     BearerAuth
+// @Param        serviceType   query string true   "Service type to check availability for (cservice or mservice)"
+// @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
+// @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
+// @Success      200 {object} entities.ResponseModel "Request successful"
+// @Failure      400 {object} entities.ResponseMessage "Invalid request"
+// @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure      403 {object} entities.ResponseMessage "Invalid role"
+// @Failure      500 {object} entities.ResponseMessage "Internal server error"
+// @Router       /services/staff [get]
+func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "owner" && token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{
+			Message: "Invalid role",
+		})
+	}
+
+	serviceType := ctx.Query("serviceType")
+	startDateStr := ctx.Query("startDate")
+	endDateStr := ctx.Query("endDate")
+
+	if serviceType != "cservice" && serviceType != "mservice" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid service type, expected 'cservice' or 'mservice'",
+		})
+	}
+
+	_, startDate, err := utils.GetRDateRange(startDateStr, startDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+	endDate, _, err := utils.GetRDateRange(endDateStr, endDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+
+	fmt.Println(startDate, endDate)
+
+	res, err := h.ServiceService.FindAvailableStaff(serviceType, startDate, endDate)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data: fiber.Map{
+			"amount": len(res),
+			"staff":  res,
+		},
+		Status: fiber.StatusOK,
+	})
+}
+
+// @Summary      Get busy time slot
+// @Description  Retrieve all busy time slot for a specific staff on a given day.
+// @Tags         service
+// @Produce      json
+// @Security     BearerAuth
+// @Param        serviceType   query string true   "Service type to check availability for (cservice or mservice)"
+// @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
+// @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
+// @Param        staffID       path  string true   "StaffID"
+// @Success      200 {object} entities.ResponseModel  "Request successful"
+// @Failure      400 {object} entities.ResponseMessage "Invalid request"
+// @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure      403 {object} entities.ResponseMessage "Invalid role"
+// @Failure      500 {object} entities.ResponseMessage "Internal server error"
+// @Router       /services/staff/{staffID}/time [get]
+func (h *HTTPGateway) GetBusyTimeSlot(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "owner" && token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{
+			Message: "Invalid role",
+		})
+	}
+
+	serviceType := ctx.Query("serviceType")
+	startDateStr := ctx.Query("startDate")
+	endDateStr := ctx.Query("endDate")
+	staffID := ctx.Params("staffID")
+
+	if serviceType != "cservice" && serviceType != "mservice" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid service type, expected 'cservice' or 'mservice'",
+		})
+	}
+
+	startDate00, startDate23, err := utils.GetRDateRange(startDateStr, startDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+	endDate00, endDate23, err := utils.GetRDateRange(endDateStr, endDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+
+	res, err := h.ServiceService.FindBusyTimeSlot(serviceType, staffID, startDate00, startDate23, endDate00, endDate23)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    res,
+		Status:  fiber.StatusOK,
 	})
 }

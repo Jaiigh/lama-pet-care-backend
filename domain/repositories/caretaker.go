@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -19,6 +20,8 @@ type ICaretakerRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
+	FindAvailableCaretaker(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
+	FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -134,4 +137,76 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 		EndWorkTime:    updatedUser.EndWorkingTime,
 		Rating:         rating,
 	}, nil
+}
+
+func (repo *caretakerRepository) FindAvailableCaretaker(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error) {
+	caretakers, err := repo.Collection.Caretaker.FindMany(
+		db.Caretaker.Leaveday.None(
+			db.Leaveday.Leaveday.Gte(startDate),
+			db.Leaveday.Leaveday.Lte(endDate),
+		),
+		db.Caretaker.Cservice.None(
+			db.Cservice.Service.Where(
+				db.Service.Or(
+					db.Service.Status.Equals("finish"),
+					db.Service.And(
+						db.Service.RdateStart.Lte(endDate),
+						db.Service.RdateEnd.Gte(startDate),
+					),
+				),
+			),
+		),
+	).With(
+		db.Caretaker.Users.Fetch(),
+	).OrderBy(
+		db.Caretaker.Rating.Order(db.SortOrderAsc),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+	if len(caretakers) == 0 { //len(nil) = 0
+		return nil, nil
+	}
+
+	results := make([]*entities.AvailableStaffResponse, 0, len(caretakers))
+	for _, c := range caretakers {
+		user := c.Users()
+		rating, _ := c.Rating()
+		profile, _ := user.ProfileImage()
+		entity := entities.AvailableStaffResponse{
+			ID:      c.UserID,
+			Name:    user.Name,
+			Profile: profile,
+			Rating:  rating,
+		}
+
+		results = append(results, &entity)
+	}
+
+	return results, nil
+}
+
+func (repo *caretakerRepository) FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error) {
+	services, err := repo.Collection.Service.FindMany(
+		db.Service.Cservice.Where(
+			db.Cservice.Cid.Equals(staffID),
+		),
+		db.Service.Or(
+			db.Service.And(
+				db.Service.RdateStart.Gt(endDate00),
+				db.Service.RdateStart.Lt(endDate23),
+			),
+			db.Service.And(
+				db.Service.RdateEnd.Gt(startDate00),
+				db.Service.RdateEnd.Lt(startDate23),
+			),
+		),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+
+	return &services, nil
 }
