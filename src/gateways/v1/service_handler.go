@@ -3,6 +3,7 @@ package gateways
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -374,15 +375,14 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Tags         service
 // @Produce      json
 // @Security     BearerAuth
-// @Param        serviceType query string true "Staff category to check availability for (caretaker or doctor)"
-// @Param        page  query int    false "Page number for pagination" [optional default: 1]
-// @Param        limit query int    false "Number of items per page" [optional default: 5]
-// @Param        body body entities.RDateRange true "service startDate and endDate"
+// @Param        serviceType   query string true   "Staff category to check availability for (caretaker or doctor)"
+// @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
+// @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
 // @Success      200 {object} entities.ResponseModel "Request successful"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      403 {object} entities.ResponseMessage "Invalid role"
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
-// @Router       /services/staff [post]
+// @Router       /services/staff [get]
 func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil || token.Purpose != "access" {
@@ -395,17 +395,8 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	}
 
 	serviceType := ctx.Query("serviceType")
-	page := ctx.QueryInt("page", 1)
-	limit := ctx.QueryInt("limit", 5)
-	var dates entities.RDateRange
-	if err := ctx.BodyParser(&dates); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
-	}
-	if err := validator.New().Struct(dates); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
-			Message: utils.FormatValidationError(err),
-		})
-	}
+	startDateStr := ctx.Query("startDate")
+	endDateStr := ctx.Query("endDate")
 
 	if serviceType != "caretaker" && serviceType != "doctor" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
@@ -413,14 +404,29 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		})
 	}
 
-	res, err := h.ServiceService.FindAvailableStaff(serviceType, dates, page, limit)
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, startDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+	endDate, err := time.Parse(layout, endDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+	startDate = startDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
+	endDate = endDate.UTC()
+
+	res, err := h.ServiceService.FindAvailableStaff(serviceType, startDate, endDate)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
 		Data: fiber.Map{
-			"page":   page,
 			"amount": len(res),
 			"staff":  res,
 		},

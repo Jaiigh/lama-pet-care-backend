@@ -5,6 +5,7 @@ import (
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
+	"time"
 
 	"fmt"
 )
@@ -19,7 +20,7 @@ type IDoctorRepository interface {
 	FindByID(userID string) (*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
-	FindAvailableDoctor(dates entities.RDateRange, offset, limit int) ([]*entities.AvailableStaffResponse, error)
+	FindAvailableDoctor(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
 }
 
 func NewDoctorRepository(db *ds.PrismaDB) IDoctorRepository {
@@ -129,26 +130,26 @@ func (repo *doctorRepository) UpdateByID(userID string, data entities.UpdateUser
 	}, nil
 }
 
-func (repo *doctorRepository) FindAvailableDoctor(dates entities.RDateRange, offset, limit int) ([]*entities.AvailableStaffResponse, error) {
+func (repo *doctorRepository) FindAvailableDoctor(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error) {
 	doctors, err := repo.Collection.Doctor.FindMany(
 		db.Doctor.Leaveday.None(
-			db.Leaveday.Leaveday.Gte(dates.StartDate),
-			db.Leaveday.Leaveday.Lte(dates.EndDate),
+			db.Leaveday.Leaveday.Gte(startDate),
+			db.Leaveday.Leaveday.Lte(endDate),
 		),
 		db.Doctor.Mservice.None(
 			db.Mservice.Service.Where(
 				db.Service.Or(
 					db.Service.Status.Equals("finish"),
 					db.Service.And(
-						db.Service.RdateStart.Lte(dates.EndDate),
-						db.Service.RdateEnd.Gte(dates.StartDate),
+						db.Service.RdateStart.Lte(endDate),
+						db.Service.RdateEnd.Gte(startDate),
 					),
 				),
 			),
 		),
 	).With(
 		db.Doctor.Users.Fetch(),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 
 	if err != nil {
 		return nil, fmt.Errorf("users -> FindByID: %v", err)

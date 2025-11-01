@@ -56,8 +56,3 @@ type SubService struct {
 	Comment   *string `json:"comment,omitempty"`
 	Score     *int    `json:"score,omitempty"`
 }
-
-type RDateRange struct {
-	StartDate time.Time `json:"start_date" validate:"required"`
-	EndDate   time.Time `json:"end_date" validate:"required"`
-}

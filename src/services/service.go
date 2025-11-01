@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -27,7 +28,7 @@ type IServiceService interface {
 	FindServicesByCaretakerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
-	FindAvailableStaff(serviceType string, dates entities.RDateRange, page, limit int) ([]*entities.AvailableStaffResponse, error)
+	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
 }
 
 func NewServiceService(
@@ -205,18 +206,17 @@ func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) er
 	return s.Repo.UpdateStatus(serviceID, status)
 }
 
-func (s *ServiceService) FindAvailableStaff(serviceType string, dates entities.RDateRange, page, limit int) ([]*entities.AvailableStaffResponse, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
+func (s *ServiceService) FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error) {
 	var staff []*entities.AvailableStaffResponse
 	var err error
 	switch serviceType {
 	case "caretaker":
-		staff, err = s.CaretakerRepo.FindAvailableCaretaker(dates, offset, limit)
+		staff, err = s.CaretakerRepo.FindAvailableCaretaker(startDate, endDate)
 		if err != nil {
 			return nil, err
 		}
 	case "doctor":
-		staff, err = s.DoctorRepo.FindAvailableDoctor(dates, offset, limit)
+		staff, err = s.DoctorRepo.FindAvailableDoctor(startDate, endDate)
 		if err != nil {
 			return nil, err
 		}
