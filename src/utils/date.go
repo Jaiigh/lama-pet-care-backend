@@ -18,7 +18,7 @@ func GetRDateRange(startDateStr, endDateStr string) (time.Time, time.Time, error
 	if err != nil {
 		return time.Time{}, time.Time{}, err
 	}
-	startDate = startDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
-	endDate = endDate.UTC()
+	startDate = startDate.UTC()
+	endDate = endDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
 	return startDate, endDate, nil
 }

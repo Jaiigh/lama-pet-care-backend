@@ -2,6 +2,7 @@ package gateways
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"lama-backend/domain/entities"
@@ -378,6 +379,7 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
 // @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
 // @Success      200 {object} entities.ResponseModel "Request successful"
+// @Failure      400 {object} entities.ResponseMessage "Invalid request"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      403 {object} entities.ResponseMessage "Invalid role"
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
@@ -397,18 +399,26 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	startDateStr := ctx.Query("startDate")
 	endDateStr := ctx.Query("endDate")
 
-	if serviceType != "caretaker" && serviceType != "doctor" {
+	if serviceType != "cservice" && serviceType != "mservice" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid service type, expected 'caretaker' or 'doctor'",
+			Message: "invalid service type, expected 'cservice' or 'mservice'",
 		})
 	}
 
-	startDate, endDate, err := utils.GetRDateRange(startDateStr, endDateStr)
+	_, startDate, err := utils.GetRDateRange(startDateStr, startDateStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid date or date format, expected YYYY-MM-DD",
 		})
 	}
+	endDate, _, err := utils.GetRDateRange(endDateStr, endDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+
+	fmt.Println(startDate, endDate)
 
 	res, err := h.ServiceService.FindAvailableStaff(serviceType, startDate, endDate)
 	if err != nil {
@@ -455,9 +465,9 @@ func (h *HTTPGateway) GetBusyTimeSlot(ctx *fiber.Ctx) error {
 	endDateStr := ctx.Query("endDate")
 	staffID := ctx.Params("staffID")
 
-	if serviceType != "caretaker" && serviceType != "doctor" {
+	if serviceType != "cservice" && serviceType != "mservice" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid service type, expected 'caretaker' or 'doctor'",
+			Message: "invalid service type, expected 'cservice' or 'mservice'",
 		})
 	}
 
