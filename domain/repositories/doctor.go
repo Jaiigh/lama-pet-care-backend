@@ -21,6 +21,7 @@ type IDoctorRepository interface {
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 	FindAvailableDoctor(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
+	FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error)
 }
 
 func NewDoctorRepository(db *ds.PrismaDB) IDoctorRepository {
@@ -172,4 +173,28 @@ func (repo *doctorRepository) FindAvailableDoctor(startDate, endDate time.Time) 
 	}
 
 	return results, nil
+}
+
+func (repo *doctorRepository) FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error) {
+	services, err := repo.Collection.Service.FindMany(
+		db.Service.Mservice.Where(
+			db.Mservice.Did.Equals(staffID),
+		),
+		db.Service.Or(
+			db.Service.And(
+				db.Service.RdateStart.Gt(endDate00),
+				db.Service.RdateStart.Lt(endDate23),
+			),
+			db.Service.And(
+				db.Service.RdateEnd.Gt(startDate00),
+				db.Service.RdateEnd.Lt(startDate23),
+			),
+		),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+
+	return &services, nil
 }

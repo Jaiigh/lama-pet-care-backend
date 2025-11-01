@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"lama-backend/domain/entities"
@@ -29,6 +30,7 @@ type IServiceService interface {
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
+	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error)
 }
 
 func NewServiceService(
@@ -210,12 +212,12 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, startDate, endDa
 	var staff []*entities.AvailableStaffResponse
 	var err error
 	switch serviceType {
-	case "caretaker":
+	case "cservice":
 		staff, err = s.CaretakerRepo.FindAvailableCaretaker(startDate, endDate)
 		if err != nil {
 			return nil, err
 		}
-	case "doctor":
+	case "mservice":
 		staff, err = s.DoctorRepo.FindAvailableDoctor(startDate, endDate)
 		if err != nil {
 			return nil, err
@@ -224,6 +226,64 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, startDate, endDa
 		return nil, nil
 	}
 	return staff, nil
+}
+
+func (s *ServiceService) FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error) {
+	var services *[]db.ServiceModel
+	var err error
+	switch serviceType {
+	case "cservice":
+		services, err = s.CaretakerRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
+		if err != nil {
+			return nil, err
+		}
+	case "mservice":
+		services, err = s.DoctorRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, nil
+	}
+
+	// Deduplicate and store
+	startSet := make(map[time.Time]struct{})
+	endSet := make(map[time.Time]struct{})
+
+	for _, svc := range *services {
+		// only include if the date part of start or end matches as you described
+		if sameDay(svc.RdateStart, endDate00) {
+			startSet[svc.RdateStart] = struct{}{}
+		}
+		if sameDay(svc.RdateEnd, startDate00) {
+			endSet[svc.RdateEnd] = struct{}{}
+		}
+	}
+
+	// Convert sets to sorted slices
+	startTimes := make([]time.Time, 0, len(startSet))
+	endTimes := make([]time.Time, 0, len(endSet))
+	for t := range startSet {
+		startTimes = append(startTimes, t)
+	}
+	for t := range endSet {
+		endTimes = append(endTimes, t)
+	}
+
+	sort.Slice(startTimes, func(i, j int) bool { return startTimes[i].Before(startTimes[j]) })
+	sort.Slice(endTimes, func(i, j int) bool { return endTimes[i].Before(endTimes[j]) })
+
+	return &entities.BusyTimeSlot{
+		StartDateTime: startTimes,
+		EndDateTime:   endTimes,
+	}, nil
+}
+
+// helper to compare date only (ignore time)
+func sameDay(t1, t2 time.Time) bool {
+	y1, m1, d1 := t1.Date()
+	y2, m2, d2 := t2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
 func mapToSubService(service entities.ServiceModel) *entities.SubService {

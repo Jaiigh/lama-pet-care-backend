@@ -21,6 +21,7 @@ type ICaretakerRepository interface {
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 	FindAvailableCaretaker(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
+	FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error)
 }
 
 func NewCaretakerRepository(db *ds.PrismaDB) ICaretakerRepository {
@@ -184,4 +185,28 @@ func (repo *caretakerRepository) FindAvailableCaretaker(startDate, endDate time.
 	}
 
 	return results, nil
+}
+
+func (repo *caretakerRepository) FindBusyTimeSlot(staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*[]db.ServiceModel, error) {
+	services, err := repo.Collection.Service.FindMany(
+		db.Service.Cservice.Where(
+			db.Cservice.Cid.Equals(staffID),
+		),
+		db.Service.Or(
+			db.Service.And(
+				db.Service.RdateStart.Gt(endDate00),
+				db.Service.RdateStart.Lt(endDate23),
+			),
+			db.Service.And(
+				db.Service.RdateEnd.Gt(startDate00),
+				db.Service.RdateEnd.Lt(startDate23),
+			),
+		),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindByID: %v", err)
+	}
+
+	return &services, nil
 }

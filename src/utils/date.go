@@ -7,3 +7,18 @@ func CheckSameDate(LHSDate, RHSDate time.Time) bool {
 		LHSDate.Month() == RHSDate.Month() &&
 		LHSDate.Day() == RHSDate.Day()
 }
+
+func GetRDateRange(startDateStr, endDateStr string) (time.Time, time.Time, error) {
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, startDateStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	endDate, err := time.Parse(layout, endDateStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	startDate = startDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
+	endDate = endDate.UTC()
+	return startDate, endDate, nil
+}

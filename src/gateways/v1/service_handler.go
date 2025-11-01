@@ -3,7 +3,6 @@ package gateways
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -375,7 +374,7 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Tags         service
 // @Produce      json
 // @Security     BearerAuth
-// @Param        serviceType   query string true   "Staff category to check availability for (caretaker or doctor)"
+// @Param        serviceType   query string true   "Service type to check availability for (cservice or mservice)"
 // @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
 // @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
 // @Success      200 {object} entities.ResponseModel "Request successful"
@@ -404,21 +403,12 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		})
 	}
 
-	layout := "2006-01-02"
-	startDate, err := time.Parse(layout, startDateStr)
+	startDate, endDate, err := utils.GetRDateRange(startDateStr, endDateStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid date or date format, expected YYYY-MM-DD",
 		})
 	}
-	endDate, err := time.Parse(layout, endDateStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid date or date format, expected YYYY-MM-DD",
-		})
-	}
-	startDate = startDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
-	endDate = endDate.UTC()
 
 	res, err := h.ServiceService.FindAvailableStaff(serviceType, startDate, endDate)
 	if err != nil {
@@ -431,5 +421,66 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 			"staff":  res,
 		},
 		Status: fiber.StatusOK,
+	})
+}
+
+// @Summary      Get busy time slot
+// @Description  Retrieve all busy time slot for a specific staff on a given day.
+// @Tags         service
+// @Produce      json
+// @Security     BearerAuth
+// @Param        serviceType   query string true   "Service type to check availability for (cservice or mservice)"
+// @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
+// @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
+// @Param        staffID       path  string true   "StaffID"
+// @Success      200 {object} entities.ResponseModel  "Request successful"
+// @Failure      400 {object} entities.ResponseMessage "Invalid request"
+// @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure      403 {object} entities.ResponseMessage "Invalid role"
+// @Failure      500 {object} entities.ResponseMessage "Internal server error"
+// @Router       /services/staff/{staffID}/time [get]
+func (h *HTTPGateway) GetBusyTimeSlot(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "owner" && token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{
+			Message: "Invalid role",
+		})
+	}
+
+	serviceType := ctx.Query("serviceType")
+	startDateStr := ctx.Query("startDate")
+	endDateStr := ctx.Query("endDate")
+	staffID := ctx.Params("staffID")
+
+	if serviceType != "caretaker" && serviceType != "doctor" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid service type, expected 'caretaker' or 'doctor'",
+		})
+	}
+
+	startDate00, startDate23, err := utils.GetRDateRange(startDateStr, startDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+	endDate00, endDate23, err := utils.GetRDateRange(endDateStr, endDateStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid date or date format, expected YYYY-MM-DD",
+		})
+	}
+
+	res, err := h.ServiceService.FindBusyTimeSlot(serviceType, staffID, startDate00, startDate23, endDate00, endDate23)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data:    res,
+		Status:  fiber.StatusOK,
 	})
 }
