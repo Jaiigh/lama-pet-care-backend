@@ -396,16 +396,11 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	}
 
 	serviceType := ctx.Query("serviceType")
-	serviceMode := ctx.Query("sesrviceMode")
+	serviceMode := ctx.Query("serviceMode")
 	startDateStr := ctx.Query("startDate")
 	endDateStr := ctx.Query("endDate")
 
 	if serviceType != "cservice" && serviceType != "mservice" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
-			Message: "invalid service type, expected 'cservice' or 'mservice'",
-		})
-	}
-	if serviceMode != "full-day" && serviceMode != "partial" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid service type, expected 'cservice' or 'mservice'",
 		})
@@ -436,6 +431,10 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 		}
+	default:
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid service mode, expected 'full-day' or 'partial'",
+		})
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
