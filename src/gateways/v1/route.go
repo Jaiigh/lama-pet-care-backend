@@ -36,4 +36,11 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	leaveday := api.Group("/leaveday", middlewares.SetJWtHeaderHandler())
 	leaveday.Post("/:day", gateway.CreateLeaveday)
+
+	pets := api.Group("/pets", middlewares.SetJWtHeaderHandler())
+	pets.Post("/", gateway.CreatePet)
+	pets.Get("/owner", gateway.FindByOwnerID)
+	pets.Get("/", gateway.FindAllPets)
+	pets.Patch("/:petID", gateway.UpdatePet)
+	pets.Delete("/:petID", gateway.DeletePet)
 }
