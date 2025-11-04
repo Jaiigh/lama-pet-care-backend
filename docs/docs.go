@@ -904,6 +904,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Service mode (full-day or partial)",
+                        "name": "serviceMode",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "service start date (format: YYYY-MM-DD)",
                         "name": "startDate",
                         "in": "query",
