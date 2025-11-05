@@ -15,6 +15,7 @@ type HTTPGateway struct {
 	ServiceService   service.IServiceService
 	LeavedayService  service.ILeavedayService
 	PetService       service.IPetService
+	PaymentService   service.IPaymentService
 }
 
 func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
@@ -22,7 +23,8 @@ func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
 	owner service.IOwnerService, doctor service.IDoctorService, caretaker service.ICaretakerService,
 	service service.IServiceService,
 	leaveday service.ILeavedayService,
-	pet service.IPetService) {
+	pet service.IPetService,
+	payment service.IPaymentService,) {
 	gateway := &HTTPGateway{
 		AuthService:      auth,
 		UsersService:     users,
@@ -32,6 +34,7 @@ func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
 		ServiceService:   service,
 		LeavedayService:  leaveday,
 		PetService:       pet,
+		PaymentService:   payment,
 	}
 
 	GatewayUsers(*gateway, app)

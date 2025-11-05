@@ -43,4 +43,8 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	pets.Get("/", gateway.FindAllPets)
 	pets.Patch("/:petID", gateway.UpdatePet)
 	pets.Delete("/:petID", gateway.DeletePet)
+
+	payment := api.Group("/payments", middlewares.SetJWtHeaderHandler())
+	payment.Get("/", gateway.GetMyPayment)
+	
 }

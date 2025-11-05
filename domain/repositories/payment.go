@@ -20,6 +20,8 @@ type IPaymentRepository interface {
 	FindByID(payID string) (*entities.PaymentModel, error)
 	DeleteByID(payID string) (*entities.PaymentModel, error)
 	UpdateByID(data entities.PaymentModel) (*entities.PaymentModel, error)
+	FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
+	FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
 }
 
 func NewPaymentRepository(db *ds.PrismaDB) IPaymentRepository {
@@ -121,3 +123,66 @@ func mapToPaymentModel(model *db.PaymentModel) *entities.PaymentModel {
 		PayDate: &payDate,
 	}
 }
+func mapToPaymentModels(models []db.PaymentModel) []*entities.PaymentModel {
+    payments := make([]*entities.PaymentModel, len(models))
+    for i := range models { 
+        
+        payments[i] = mapToPaymentModel(&models[i]) 
+    }
+    return payments
+}
+
+func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
+    params := []db.PaymentWhereParam{}
+
+    if month > 0 && year > 0 {
+       
+        params = addPayDateParams(params, month, year)
+    }
+
+    payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
+        db.Payment.PayDate.Order(db.SortOrderAsc),
+    ).Skip(offset).Take(limit).Exec(repo.Context)
+    if err != nil {
+        return nil, err
+    }
+
+    return mapToPaymentModels(payments), nil
+}
+
+func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
+    params := []db.PaymentWhereParam{
+        db.Payment.Oid.Equals(ownerID),
+    }
+
+    if month > 0 && year > 0 {
+        
+        params = addPayDateParams(params, month, year)
+    }
+
+    payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
+        db.Payment.PayDate.Order(db.SortOrderAsc),
+    ).Skip(offset).Take(limit).Exec(repo.Context)
+    if err != nil {
+        return nil, err
+    }
+
+    return mapToPaymentModels(payments), nil
+}
+
+
+func addPayDateParams(params []db.PaymentWhereParam, month, year int) []db.PaymentWhereParam {
+    
+    startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	
+	
+    params = append(params,
+        db.Payment.PayDate.Gte(startDate),
+		
+    )
+
+    return params
+}
+
+
+

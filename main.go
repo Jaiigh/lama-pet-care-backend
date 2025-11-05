@@ -67,8 +67,9 @@ func main() {
 	serviceService := sv.NewServiceService(serviceRepo, caretakerRepo, doctorRepo, mserviceRepo, cserviceRepo, paymentRepo)
 	leavedayService := sv.NewLeavedayService(leavedayRepo)
 	petService := sv.NewPetService(petRepo)
+	paymentService := sv.NewPaymentService(paymentRepo)
 
-	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService, leavedayService, petService)
+	gw.NewHTTPGateway(app, authService, usersService, ownerService, doctorService, caretakerService, serviceService, leavedayService, petService, paymentService)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
