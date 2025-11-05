@@ -2,7 +2,6 @@ package gateways
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"lama-backend/domain/entities"
@@ -376,6 +375,7 @@ func (h *HTTPGateway) UpdateStatusService(ctx *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        serviceType   query string true   "Service type to check availability for (cservice or mservice)"
+// @Param        serviceMode   query string true   "Service mode (full-day or partial)"
 // @Param        startDate     query string true   "service start date (format: YYYY-MM-DD)"
 // @Param        endDate       query string true   "service end date (format: YYYY-MM-DD)"
 // @Success      200 {object} entities.ResponseModel "Request successful"
@@ -396,6 +396,7 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 	}
 
 	serviceType := ctx.Query("serviceType")
+	serviceMode := ctx.Query("serviceMode")
 	startDateStr := ctx.Query("startDate")
 	endDateStr := ctx.Query("endDate")
 
@@ -405,24 +406,35 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		})
 	}
 
-	_, startDate, err := utils.GetRDateRange(startDateStr, startDateStr)
+	startDate00, startDate23, err := utils.GetRDateRange(startDateStr, startDateStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid date or date format, expected YYYY-MM-DD",
 		})
 	}
-	endDate, _, err := utils.GetRDateRange(endDateStr, endDateStr)
+	endDate00, endDate23, err := utils.GetRDateRange(endDateStr, endDateStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
 			Message: "invalid date or date format, expected YYYY-MM-DD",
 		})
 	}
 
-	fmt.Println(startDate, endDate)
-
-	res, err := h.ServiceService.FindAvailableStaff(serviceType, startDate, endDate)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	var res []*entities.AvailableStaffResponse
+	switch serviceMode {
+	case "full-day":
+		res, err = h.ServiceService.FindAvailableStaff(serviceType, startDate00, endDate23)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	case "partial":
+		res, err = h.ServiceService.FindAvailableStaff(serviceType, startDate23, endDate00)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	default:
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid service mode, expected 'full-day' or 'partial'",
+		})
 	}
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "success",
