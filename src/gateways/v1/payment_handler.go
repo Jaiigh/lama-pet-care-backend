@@ -43,6 +43,8 @@ func (h *HTTPGateway) GetMyPayment(ctx *fiber.Ctx) error {
 	case "owner":
 		payments, err = h.PaymentService.FindPaymentsByOwnerID(token.UserID,  month, year, page, limit)
 
+		default:
+			return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token. have to be admin or owner"})		
 	}
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
