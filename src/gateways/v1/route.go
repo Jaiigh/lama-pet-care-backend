@@ -46,5 +46,5 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	payment := api.Group("/payments", middlewares.SetJWtHeaderHandler())
 	payment.Get("/", gateway.GetMyPayment)
-	
+	payment.Patch("/:paymentID", gateway.UpdatePaymentByID)
 }

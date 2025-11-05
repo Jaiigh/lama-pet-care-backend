@@ -447,7 +447,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all payments. Admins can see all payments, while owners can only see their own. Can be filtered by month and year. Supports pagination.",
+                "description": "Get all payments. Admins can see all payments, while owners can only see their own. Can be filtered by month and year. If only the 'year' query is provided, 'month' will default to 1 (January). Supports pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -492,6 +492,82 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/{paymentID}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the status of a payment by its ID. Only admins are authorized to perform this action can update only status type and paydate.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Update payment status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment ID",
+                        "name": "paymentID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "paid",
+                            "unpaid",
+                            "pending"
+                        ],
+                        "type": "string",
+                        "description": "New status for the payment",
+                        "name": "status",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated payment status",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }

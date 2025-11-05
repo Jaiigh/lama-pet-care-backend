@@ -6,7 +6,7 @@ import (
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"time"
-
+	"errors"
 	"fmt"
 )
 
@@ -19,7 +19,7 @@ type IPaymentRepository interface {
 	InsertPayment(user_id string) (*entities.PaymentModel, error)
 	FindByID(payID string) (*entities.PaymentModel, error)
 	DeleteByID(payID string) (*entities.PaymentModel, error)
-	UpdateByID(data entities.PaymentModel) (*entities.PaymentModel, error)
+	UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error)
 	FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
 	FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
 }
@@ -74,35 +74,45 @@ func (repo *paymentRepository) DeleteByID(payID string) (*entities.PaymentModel,
 	return mapToPaymentModel(deletedPayment), nil
 }
 
-func (repo *paymentRepository) UpdateByID(data entities.PaymentModel) (*entities.PaymentModel, error) {
+func (repo *paymentRepository) UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error) {
 	updates := []db.PaymentSetParam{}
 
-	if data.Status != "" {
-		updates = append(updates, db.Payment.Status.Set(data.Status))
-	}
-	if *data.Type != "" {
-		updates = append(updates, db.Payment.Type.Set(*data.Type))
-	}
-	if data.PayDate != nil {
-		updates = append(updates, db.Payment.PayDate.Set(*data.PayDate))
-	}
+   
+    if data.Status != "" {
+        updates = append(updates, db.Payment.Status.Set(db.PaymentStatus(data.Status)))
+    }
 
-	if len(updates) == 0 {
-		return nil, fmt.Errorf("payment -> UpdateByID: no fields to update")
-	}
+    
+    if data.Type != nil && *data.Type != "" {
+        updates = append(updates, db.Payment.Type.Set(*data.Type))
+    }
 
-	updatedPayment, err := repo.Collection.Payment.FindUnique(
-		db.Payment.Payid.Equals(data.PayID),
-	).Update(updates...).Exec(repo.Context)
+    
+    if data.PayDate != nil {
+        updates = append(updates, db.Payment.PayDate.Set(*data.PayDate))
+    }
 
-	if err != nil {
-		return nil, fmt.Errorf("payment -> UpdateByID: %v", err)
-	}
-	if updatedPayment == nil {
-		return nil, fmt.Errorf("payment -> UpdateByID: payment not found")
-	}
+    if len(updates) == 0 {
+        return nil, fmt.Errorf("payment -> UpdateByID: no fields to update")
+    }
 
-	return mapToPaymentModel(updatedPayment), nil
+    
+    updatedPayment, err := repo.Collection.Payment.FindUnique(
+        db.Payment.Payid.Equals(paymentID),
+    ).Update(updates...).Exec(repo.Context)
+
+    if err != nil {
+        
+        if errors.Is(err, db.ErrNotFound) {
+            return nil, db.ErrNotFound 
+        }
+        
+        return nil, fmt.Errorf("payment -> UpdateByID: %v", err)
+    }
+
+    
+
+    return mapToPaymentModel(updatedPayment), nil
 }
 
 func mapToPaymentModel(model *db.PaymentModel) *entities.PaymentModel {
@@ -135,11 +145,12 @@ func mapToPaymentModels(models []db.PaymentModel) []*entities.PaymentModel {
 func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
     params := []db.PaymentWhereParam{}
 
-    if month > 0 && year > 0 {
-       
-        params = addPayDateParams(params, month, year)
-    }
-
+    if year > 0 { 
+    	if month <= 0 { 
+        	month = 1 
+   	 	}
+    	params = addPayDateParams(params, month, year) 
+	}
     payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
         db.Payment.PayDate.Order(db.SortOrderAsc),
     ).Skip(offset).Take(limit).Exec(repo.Context)
@@ -155,10 +166,13 @@ func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, 
         db.Payment.Oid.Equals(ownerID),
     }
 
-    if month > 0 && year > 0 {
-        
-        params = addPayDateParams(params, month, year)
-    }
+   
+	 if year > 0 { 
+    	if month <= 0 { 
+        	month = 1 
+   	 	}
+    	params = addPayDateParams(params, month, year) 
+	}
 
     payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
         db.Payment.PayDate.Order(db.SortOrderAsc),

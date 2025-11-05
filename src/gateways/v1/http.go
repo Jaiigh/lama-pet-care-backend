@@ -2,7 +2,7 @@ package gateways
 
 import (
 	service "lama-backend/src/services"
-
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,6 +16,7 @@ type HTTPGateway struct {
 	LeavedayService  service.ILeavedayService
 	PetService       service.IPetService
 	PaymentService   service.IPaymentService
+	Validator        *validator.Validate
 }
 
 func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
@@ -35,6 +36,7 @@ func NewHTTPGateway(app *fiber.App, auth service.IAuthService,
 		LeavedayService:  leaveday,
 		PetService:       pet,
 		PaymentService:   payment,
+		Validator:      validator.New(),
 	}
 
 	GatewayUsers(*gateway, app)
