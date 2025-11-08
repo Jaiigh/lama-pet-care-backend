@@ -95,6 +95,7 @@ model Owner {
 
 model Payment {
   type     String?
+  price  Int
   status   payment_status
   pay_date DateTime?      @db.Date
   PAYID    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -119,13 +120,12 @@ model Pet {
 }
 
 model Service {
-  price  Int
   status service_status
   rdate_start  DateTime       @db.Timestamptz(6)
   rdate_end  DateTime       @db.Timestamptz(6)
   SID    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   PETID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  PAYID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  PAYID  String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid @unique
   OID    String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   Cservice Cservice?

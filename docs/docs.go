@@ -518,6 +518,17 @@ const docTemplate = `{
                     "payment"
                 ],
                 "summary": "Create payments",
+                "parameters": [
+                    {
+                        "description": "payment payload include time",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreatePaymentModel"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved payments",
@@ -1648,12 +1659,26 @@ const docTemplate = `{
                 "RoleCaretaker"
             ]
         },
+        "entities.CreatePaymentModel": {
+            "type": "object",
+            "required": [
+                "reserve_date_end",
+                "reserve_date_start"
+            ],
+            "properties": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
                 "payment_id",
                 "pet_id",
-                "price",
                 "reserve_date_end",
                 "reserve_date_start",
                 "service_type",
@@ -1677,10 +1702,6 @@ const docTemplate = `{
                 },
                 "pet_id": {
                     "type": "string"
-                },
-                "price": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "reserve_date_end": {
                     "type": "string"
@@ -1892,10 +1913,6 @@ const docTemplate = `{
                 },
                 "pet_id": {
                     "type": "string"
-                },
-                "price": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "reserve_date_end": {
                     "type": "string"

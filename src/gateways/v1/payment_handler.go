@@ -8,6 +8,7 @@ import (
 	"lama-backend/domain/prisma/db"
 	"lama-backend/src/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -64,6 +65,7 @@ func (h *HTTPGateway) GetMyPayment(ctx *fiber.Ctx) error {
 // @Tags         payment
 // @Produce      json
 // @Security     BearerAuth
+// @Param        body body entities.CreatePaymentModel true "payment payload include time"
 // @Success      200 {object} entities.ResponseModel "Successfully retrieved payments"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
@@ -74,11 +76,25 @@ func (h *HTTPGateway) CreatePayment(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
+	var bodydata entities.CreatePaymentModel
+	if err := ctx.BodyParser(&bodydata); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid request body",
+		})
+	}
+	if err := validator.New().Struct(bodydata); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
+	}
+
+	if bodydata.ReserveDateEnd.Before(bodydata.ReserveDateStart) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date cannot be earlier than the start date."})
+	}
+
 	var payment *entities.PaymentModel
 
 	switch token.Role {
 	case "owner", "admin":
-		payment, err = h.PaymentService.InsertPayment(token.UserID)
+		payment, err = h.PaymentService.InsertPayment(token.UserID, &bodydata)
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 		}

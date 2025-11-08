@@ -2,12 +2,12 @@ package repositories
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	ds "lama-backend/domain/datasources"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"time"
-	"errors"
-	"fmt"
 )
 
 type paymentRepository struct {
@@ -16,7 +16,7 @@ type paymentRepository struct {
 }
 
 type IPaymentRepository interface {
-	InsertPayment(user_id string) (*entities.PaymentModel, error)
+	InsertPayment(user_id string, price int) (*entities.PaymentModel, error)
 	FindByID(payID string) (*entities.PaymentModel, error)
 	DeleteByID(payID string) (*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error)
@@ -31,8 +31,9 @@ func NewPaymentRepository(db *ds.PrismaDB) IPaymentRepository {
 	}
 }
 
-func (repo *paymentRepository) InsertPayment(user_id string) (*entities.PaymentModel, error) {
+func (repo *paymentRepository) InsertPayment(user_id string, price int) (*entities.PaymentModel, error) {
 	createdData, err := repo.Collection.Payment.CreateOne(
+		db.Payment.Price.Set(price),
 		db.Payment.Status.Set(db.PaymentStatusUnpaid),
 		db.Payment.Owner.Link(db.Owner.UserID.Equals(user_id)),
 	).Exec(repo.Context)
@@ -77,42 +78,36 @@ func (repo *paymentRepository) DeleteByID(payID string) (*entities.PaymentModel,
 func (repo *paymentRepository) UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error) {
 	updates := []db.PaymentSetParam{}
 
-   
-    if data.Status != "" {
-        updates = append(updates, db.Payment.Status.Set(db.PaymentStatus(data.Status)))
-    }
+	if data.Status != "" {
+		updates = append(updates, db.Payment.Status.Set(db.PaymentStatus(data.Status)))
+	}
 
-    
-    if data.Type != nil && *data.Type != "" {
-        updates = append(updates, db.Payment.Type.Set(*data.Type))
-    }
+	if data.Type != nil && *data.Type != "" {
+		updates = append(updates, db.Payment.Type.Set(*data.Type))
+	}
 
-    
-    if data.PayDate != nil {
-        updates = append(updates, db.Payment.PayDate.Set(*data.PayDate))
-    }
+	if data.PayDate != nil {
+		updates = append(updates, db.Payment.PayDate.Set(*data.PayDate))
+	}
 
-    if len(updates) == 0 {
-        return nil, fmt.Errorf("payment -> UpdateByID: no fields to update")
-    }
+	if len(updates) == 0 {
+		return nil, fmt.Errorf("payment -> UpdateByID: no fields to update")
+	}
 
-    
-    updatedPayment, err := repo.Collection.Payment.FindUnique(
-        db.Payment.Payid.Equals(paymentID),
-    ).Update(updates...).Exec(repo.Context)
+	updatedPayment, err := repo.Collection.Payment.FindUnique(
+		db.Payment.Payid.Equals(paymentID),
+	).Update(updates...).Exec(repo.Context)
 
-    if err != nil {
-        
-        if errors.Is(err, db.ErrNotFound) {
-            return nil, db.ErrNotFound 
-        }
-        
-        return nil, fmt.Errorf("payment -> UpdateByID: %v", err)
-    }
+	if err != nil {
 
-    
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, db.ErrNotFound
+		}
 
-    return mapToPaymentModel(updatedPayment), nil
+		return nil, fmt.Errorf("payment -> UpdateByID: %v", err)
+	}
+
+	return mapToPaymentModel(updatedPayment), nil
 }
 
 func mapToPaymentModel(model *db.PaymentModel) *entities.PaymentModel {
@@ -129,74 +124,67 @@ func mapToPaymentModel(model *db.PaymentModel) *entities.PaymentModel {
 		PayID:   model.Payid,
 		OwnerID: model.Oid,
 		Status:  model.Status,
+		Price:   model.Price,
 		Type:    &paymentType,
 		PayDate: &payDate,
 	}
 }
 func mapToPaymentModels(models []db.PaymentModel) []*entities.PaymentModel {
-    payments := make([]*entities.PaymentModel, len(models))
-    for i := range models { 
-        
-        payments[i] = mapToPaymentModel(&models[i]) 
-    }
-    return payments
+	payments := make([]*entities.PaymentModel, len(models))
+	for i := range models {
+		payments[i] = mapToPaymentModel(&models[i])
+	}
+	return payments
 }
 
 func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
-    params := []db.PaymentWhereParam{}
+	params := []db.PaymentWhereParam{}
 
-    if year > 0 { 
-    	if month <= 0 { 
-        	month = 1 
-   	 	}
-    	params = addPayDateParams(params, month, year) 
+	if year > 0 {
+		if month <= 0 {
+			month = 1
+		}
+		params = addPayDateParams(params, month, year)
 	}
-    payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
-        db.Payment.PayDate.Order(db.SortOrderAsc),
-    ).Skip(offset).Take(limit).Exec(repo.Context)
-    if err != nil {
-        return nil, err
-    }
+	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
+		db.Payment.PayDate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
+	if err != nil {
+		return nil, err
+	}
 
-    return mapToPaymentModels(payments), nil
+	return mapToPaymentModels(payments), nil
 }
 
 func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
-    params := []db.PaymentWhereParam{
-        db.Payment.Oid.Equals(ownerID),
-    }
-
-   
-	 if year > 0 { 
-    	if month <= 0 { 
-        	month = 1 
-   	 	}
-    	params = addPayDateParams(params, month, year) 
+	params := []db.PaymentWhereParam{
+		db.Payment.Oid.Equals(ownerID),
 	}
 
-    payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
-        db.Payment.PayDate.Order(db.SortOrderAsc),
-    ).Skip(offset).Take(limit).Exec(repo.Context)
-    if err != nil {
-        return nil, err
-    }
+	if year > 0 {
+		if month <= 0 {
+			month = 1
+		}
+		params = addPayDateParams(params, month, year)
+	}
 
-    return mapToPaymentModels(payments), nil
+	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
+		db.Payment.PayDate.Order(db.SortOrderAsc),
+	).Skip(offset).Take(limit).Exec(repo.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapToPaymentModels(payments), nil
 }
-
 
 func addPayDateParams(params []db.PaymentWhereParam, month, year int) []db.PaymentWhereParam {
-    
-    startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-	
-	
-    params = append(params,
-        db.Payment.PayDate.Gte(startDate),
-		
-    )
 
-    return params
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+
+	params = append(params,
+		db.Payment.PayDate.Gte(startDate),
+	)
+
+	return params
 }
-
-
-
