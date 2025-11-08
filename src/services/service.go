@@ -53,9 +53,13 @@ func NewServiceService(
 
 func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
 	status := db.ServiceStatus(data.Status)
-	switch status {
-	case db.ServiceStatusWait, db.ServiceStatusOngoing, db.ServiceStatusFinish:
-	default:
+	validStatuses := map[db.ServiceStatus]bool{
+		db.ServiceStatusWait:    true,
+		db.ServiceStatusOngoing: true,
+		db.ServiceStatusFinish:  true,
+	}
+
+	if !validStatuses[status] {
 		return nil, fmt.Errorf("service -> CreateService: invalid status %q", data.Status)
 	}
 
@@ -65,9 +69,12 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: caretaker not found: %w", err)
 		}
-		payment, err := s.PaymentRepo.InsertPayment(data.OwnerID)
+		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
 		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create payment: %w", err)
+			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
+		}
+		if payment.Status != db.PaymentStatusPaid {
+			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
 		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
@@ -80,9 +87,12 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: doctor not found: %w", err)
 		}
-		payment, err := s.PaymentRepo.InsertPayment(data.OwnerID)
+		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
 		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create payment: %w", err)
+			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
+		}
+		if payment.Status != db.PaymentStatusPaid {
+			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
 		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
