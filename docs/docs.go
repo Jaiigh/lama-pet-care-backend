@@ -503,6 +503,41 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create payments. Only user and admin can create payment",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Create payments",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved payments",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
             }
         },
         "/payments/{paymentID}": {
@@ -1616,6 +1651,7 @@ const docTemplate = `{
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
+                "payment_id",
                 "pet_id",
                 "price",
                 "reserve_date_end",
@@ -1637,7 +1673,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_id": {
-                    "description": "for backend don't require in request",
                     "type": "string"
                 },
                 "pet_id": {
@@ -1975,6 +2010,9 @@ const docTemplate = `{
                 },
                 "role": {
                     "$ref": "#/definitions/db.Role"
+                },
+                "show_id": {
+                    "type": "integer"
                 },
                 "specialization": {
                     "type": "string"
