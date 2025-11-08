@@ -9,6 +9,7 @@ datasource db {
 
 model Users {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  show_id          Int      @default(autoincrement()) @unique
   created_at       DateTime @default(now()) @db.Timestamptz(6)
   updated_at       DateTime @updatedAt @db.Timestamptz(6)
   email            String

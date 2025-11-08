@@ -45,18 +45,7 @@ func (repo *usersRepository) InsertUser(role string, data entities.CreatedUserMo
 		return nil, fmt.Errorf("users -> InsertUser: %v", err)
 	}
 
-	return &entities.UserDataModel{
-		UserID:          createdData.ID,
-		CreatedAt:       createdData.CreatedAt,
-		UpdatedAt:       createdData.UpdatedAt,
-		Email:           createdData.Email,
-		Password:        createdData.Password,
-		Role:            createdData.Role,
-		Name:            createdData.Name,
-		BirthDate:       createdData.Birthdate,
-		TelephoneNumber: createdData.TelephoneNumber,
-		Address:         createdData.Address,
-	}, nil
+	return MapToEntities(createdData), nil
 }
 
 func (repo *usersRepository) FindByEmailAndRole(email string, role string) (*entities.LoginUserResponseModel, error) {
@@ -111,21 +100,7 @@ func (repo *usersRepository) DeleteByID(userID string) (*entities.UserDataModel,
 		return nil, fmt.Errorf("users -> DeleteByID: user not found")
 	}
 
-	profileImage, _ := deletedUser.ProfileImage()
-
-	return &entities.UserDataModel{
-		UserID:          deletedUser.ID,
-		CreatedAt:       deletedUser.CreatedAt,
-		UpdatedAt:       deletedUser.UpdatedAt,
-		Email:           deletedUser.Email,
-		Password:        deletedUser.Password,
-		Role:            deletedUser.Role,
-		Name:            deletedUser.Name,
-		BirthDate:       deletedUser.Birthdate,
-		TelephoneNumber: deletedUser.TelephoneNumber,
-		Address:         deletedUser.Address,
-		Profile:         profileImage,
-	}, nil
+	return MapToEntities(deletedUser), nil
 }
 
 func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error) {
@@ -170,21 +145,7 @@ func (repo *usersRepository) UpdateByID(userID string, data entities.UpdateUserM
 		return nil, fmt.Errorf("users -> UpdateByID: user not found")
 	}
 
-	profileImage, _ := updatedUser.ProfileImage()
-
-	return &entities.UserDataModel{
-		UserID:          updatedUser.ID,
-		CreatedAt:       updatedUser.CreatedAt,
-		UpdatedAt:       updatedUser.UpdatedAt,
-		Email:           updatedUser.Email,
-		Password:        updatedUser.Password,
-		Role:            updatedUser.Role,
-		Name:            updatedUser.Name,
-		BirthDate:       updatedUser.Birthdate,
-		TelephoneNumber: updatedUser.TelephoneNumber,
-		Address:         updatedUser.Address,
-		Profile:         profileImage,
-	}, nil
+	return MapToEntities(updatedUser), nil
 }
 
 func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
@@ -215,6 +176,7 @@ func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
 
 	return &entities.UserDataModel{
 		UserID:          user.ID,
+		ShowID:          user.ShowID,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 		Email:           user.Email,
@@ -234,4 +196,3 @@ func MapToEntities(user *db.UsersModel) *entities.UserDataModel {
 		TotalSpending:   totalSpending,
 	}
 }
-
