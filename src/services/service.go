@@ -66,19 +66,29 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	var result *entities.ServiceModel
 	switch data.ServiceType {
 	case "cservice":
+		// find caretaker
 		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: caretaker not found: %w", err)
 		}
+
+		// find payment
 		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
 		if err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
 		}
+		if payment.OwnerID != data.OwnerID {
+			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
+		}
 		if payment.Status != db.PaymentStatusPaid {
 			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
+
+		// insert service
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
+
+		// insert subservice
 		if _, err = s.CserviceRepo.Insert(*mapToSubService(*result)); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
 		}
@@ -86,16 +96,22 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: doctor not found: %w", err)
 		}
+
 		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
 		if err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
 		}
+		if payment.OwnerID != data.OwnerID {
+			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
+		}
 		if payment.Status != db.PaymentStatusPaid {
 			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
+
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
+
 		if _, err = s.MserviceRepo.Insert(*mapToSubService(*result)); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
 		}
