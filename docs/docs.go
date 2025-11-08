@@ -503,6 +503,52 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create payments. Only user and admin can create payment",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Create payments",
+                "parameters": [
+                    {
+                        "description": "payment payload include time",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreatePaymentModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved payments",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
             }
         },
         "/payments/{paymentID}": {
@@ -1613,11 +1659,26 @@ const docTemplate = `{
                 "RoleCaretaker"
             ]
         },
+        "entities.CreatePaymentModel": {
+            "type": "object",
+            "required": [
+                "reserve_date_end",
+                "reserve_date_start"
+            ],
+            "properties": {
+                "reserve_date_end": {
+                    "type": "string"
+                },
+                "reserve_date_start": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
+                "payment_id",
                 "pet_id",
-                "price",
                 "reserve_date_end",
                 "reserve_date_start",
                 "service_type",
@@ -1625,10 +1686,6 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
-                "comment": {
-                    "type": "string",
-                    "minLength": 1
-                },
                 "disease": {
                     "type": "string",
                     "minLength": 1
@@ -1637,15 +1694,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_id": {
-                    "description": "for backend don't require in request",
                     "type": "string"
                 },
                 "pet_id": {
                     "type": "string"
-                },
-                "price": {
-                    "type": "integer",
-                    "minimum": 0
                 },
                 "reserve_date_end": {
                     "type": "string"
@@ -1858,10 +1910,6 @@ const docTemplate = `{
                 "pet_id": {
                     "type": "string"
                 },
-                "price": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "reserve_date_end": {
                     "type": "string"
                 },
@@ -1975,6 +2023,9 @@ const docTemplate = `{
                 },
                 "role": {
                     "$ref": "#/definitions/db.Role"
+                },
+                "show_id": {
+                    "type": "integer"
                 },
                 "specialization": {
                     "type": "string"

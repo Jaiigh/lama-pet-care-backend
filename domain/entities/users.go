@@ -7,6 +7,7 @@ import (
 
 type UserDataModel struct {
 	UserID          string     `json:"user_id"`
+	ShowID          int        `json:"show_id"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	Email           string     `json:"email"`

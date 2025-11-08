@@ -3,6 +3,7 @@ package gateways
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
@@ -60,14 +61,6 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 
 	switch req.ServiceType {
 	case "cservice":
-		if req.Comment != nil {
-			trimmed := strings.TrimSpace(*req.Comment)
-			if trimmed == "" {
-				req.Comment = nil
-			} else {
-				req.Comment = &trimmed
-			}
-		}
 	case "mservice":
 		if req.Disease == nil || strings.TrimSpace(*req.Disease) == "" {
 			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
@@ -87,8 +80,10 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 			Message: utils.FormatValidationError(err),
 		})
 	}
-	if req.ReserveDateEnd.Before(req.ReserveDateStart) {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date cannot be earlier than the start date."})
+	req.ReserveDateEnd = req.ReserveDateEnd.Truncate(time.Hour)
+	req.ReserveDateStart = req.ReserveDateStart.Truncate(time.Hour)
+	if !req.ReserveDateEnd.After(req.ReserveDateStart) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
 	}
 
 	service, err := h.ServiceService.CreateService(req)
@@ -159,7 +154,6 @@ func (h *HTTPGateway) UpdateService(ctx *fiber.Ctx) error {
 
 	if req.OwnerID == nil &&
 		req.PetID == nil &&
-		req.Price == nil &&
 		req.Status == nil &&
 		req.ReserveDateStart == nil &&
 		req.ReserveDateEnd == nil &&

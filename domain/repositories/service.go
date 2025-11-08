@@ -36,7 +36,6 @@ func NewServiceRepository(db *ds.PrismaDB) IServiceRepository {
 
 func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
 	createdService, err := repo.Collection.Service.CreateOne(
-		db.Service.Price.Set(data.Price),
 		db.Service.Status.Set(db.ServiceStatus(data.Status)),
 		db.Service.RdateStart.Set(data.ReserveDateStart),
 		db.Service.RdateEnd.Set(data.ReserveDateEnd),
@@ -51,7 +50,6 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 	result := mapServiceModel(createdService)
 	result.StaffID = data.StaffID
 	result.Disease = data.Disease
-	result.Comment = data.Comment
 	result.Score = nil
 
 	return result, nil
@@ -88,9 +86,6 @@ func (repo *serviceRepository) DeleteByID(serviceID string) (*entities.ServiceMo
 func (repo *serviceRepository) UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error) {
 	updates := []db.ServiceSetParam{}
 
-	if data.Price != nil {
-		updates = append(updates, db.Service.Price.Set(*data.Price))
-	}
 	if data.Status != nil {
 		updates = append(updates, db.Service.Status.Set(db.ServiceStatus(*data.Status)))
 	}
@@ -257,7 +252,6 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 		OwnerID:          model.Oid,
 		PetID:            model.Petid,
 		PaymentID:        model.Payid,
-		Price:            model.Price,
 		Status:           model.Status,
 		ReserveDateStart: model.RdateStart,
 		ReserveDateEnd:   model.RdateEnd,
