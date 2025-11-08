@@ -26,9 +26,8 @@ func NewPaymentService(repo repositories.IPaymentRepository) IPaymentService {
 }
 
 func (s *PaymentService) InsertPayment(userID string, reservedDate *entities.CreatePaymentModel) (*entities.PaymentModel, error) {
-	duration := reservedDate.ReserveDateEnd.Sub(reservedDate.ReserveDateStart)
-	hours := duration.Hours()
-	price := int(hours * 100)
+	durationHours := calculateWorkHours(reservedDate.ReserveDateStart, reservedDate.ReserveDateEnd)
+	price := int(durationHours * 100)
 	return s.repo.InsertPayment(userID, price)
 }
 
@@ -76,4 +75,53 @@ func (s *PaymentService) UpdateByID(paymentID string, data entities.UpdatePaymen
 	// [!! แก้ไข !!]
 	// ส่ง Model ที่แปลงแล้ว (paymentModelToRepo) ไปให้ Repo
 	return s.repo.UpdateByID(paymentID, paymentModelToRepo)
+}
+
+func calculateWorkHours(start, end time.Time) float64 {
+	// Define working hours
+	workStart := 8
+	workEnd := 17
+
+	if end.Before(start) {
+		return 0
+	}
+
+	totalHours := 0.0
+	current := start
+
+	for current.Before(end) {
+		// Get the working start and end of the current day
+		dayStart := time.Date(current.Year(), current.Month(), current.Day(), workStart, 0, 0, 0, current.Location())
+		dayEnd := time.Date(current.Year(), current.Month(), current.Day(), workEnd, 0, 0, 0, current.Location())
+
+		// Effective start = later of (current time, dayStart)
+		effectiveStart := maxTime(current, dayStart)
+		// Effective end = earlier of (end time, dayEnd)
+		effectiveEnd := minTime(end, dayEnd)
+
+		// Count hours if within working range
+		if effectiveEnd.After(effectiveStart) {
+			totalHours += effectiveEnd.Sub(effectiveStart).Hours()
+		}
+
+		// Move to next day
+		current = dayStart.Add(24 * time.Hour)
+	}
+
+	return totalHours
+}
+
+// Helper functions
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func minTime(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
 }
