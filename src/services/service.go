@@ -76,7 +76,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if payment.Status != db.PaymentStatusPaid {
 			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
-		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
@@ -94,7 +93,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 		if payment.Status != db.PaymentStatusPaid {
 			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
 		}
-		data.PaymentID = payment.PayID
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
