@@ -1686,10 +1686,6 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
-                "comment": {
-                    "type": "string",
-                    "minLength": 1
-                },
                 "disease": {
                     "type": "string",
                     "minLength": 1

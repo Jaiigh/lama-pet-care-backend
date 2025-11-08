@@ -50,7 +50,6 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 	result := mapServiceModel(createdService)
 	result.StaffID = data.StaffID
 	result.Disease = data.Disease
-	result.Comment = data.Comment
 	result.Score = nil
 
 	return result, nil

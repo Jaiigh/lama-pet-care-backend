@@ -31,7 +31,6 @@ type CreateServiceRequest struct {
 	ReserveDateStart time.Time `json:"reserve_date_start" validate:"required"`
 	ReserveDateEnd   time.Time `json:"reserve_date_end" validate:"required"`
 	Disease          *string   `json:"disease,omitempty" validate:"omitempty,min=1"`
-	Comment          *string   `json:"comment,omitempty" validate:"omitempty,min=1"`
 }
 
 type UpdateServiceRequest struct {

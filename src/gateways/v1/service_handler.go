@@ -60,14 +60,6 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 
 	switch req.ServiceType {
 	case "cservice":
-		if req.Comment != nil {
-			trimmed := strings.TrimSpace(*req.Comment)
-			if trimmed == "" {
-				req.Comment = nil
-			} else {
-				req.Comment = &trimmed
-			}
-		}
 	case "mservice":
 		if req.Disease == nil || strings.TrimSpace(*req.Disease) == "" {
 			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
