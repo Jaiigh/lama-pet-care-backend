@@ -4,6 +4,7 @@ import (
 	"errors"
 	"lama-backend/domain/entities"
 	"lama-backend/src/middlewares"
+	"time"
 
 	"lama-backend/domain/prisma/db"
 	"lama-backend/src/utils"
@@ -86,8 +87,10 @@ func (h *HTTPGateway) CreatePayment(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
 	}
 
-	if bodydata.ReserveDateEnd.Before(bodydata.ReserveDateStart) {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date cannot be earlier than the start date."})
+	bodydata.ReserveDateEnd = bodydata.ReserveDateEnd.Truncate(time.Hour)
+	bodydata.ReserveDateStart = bodydata.ReserveDateStart.Truncate(time.Hour)
+	if !bodydata.ReserveDateEnd.After(bodydata.ReserveDateStart) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
 	}
 
 	var payment *entities.PaymentModel
