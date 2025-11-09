@@ -13,6 +13,7 @@ require (
 	github.com/resend/resend-go/v2 v2.27.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/steebchen/prisma-client-go v0.47.0
+	github.com/stripe/stripe-go/v76 v76.25.0
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/crypto v0.43.0
 )

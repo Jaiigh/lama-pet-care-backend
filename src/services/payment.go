@@ -1,11 +1,17 @@
 package services
 
 import (
+	"fmt"
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/stripe/stripe-go/v76"
+	"github.com/stripe/stripe-go/v76/checkout/session"
+	"github.com/stripe/stripe-go/v76/paymentintent"
 )
 
 type PaymentService struct {
@@ -13,10 +19,13 @@ type PaymentService struct {
 }
 
 type IPaymentService interface {
+	CalPrice(reservedDate *entities.CreatePaymentModel) int
 	InsertPayment(userID string, reservedDate *entities.CreatePaymentModel) (*entities.PaymentModel, error)
 	FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error)
+	StripeCreatePrice(userID string, payment *entities.PaymentModel) (string, error)
+	GetMethodAndPaydate(payIntent string) (string, string, error)
 }
 
 func NewPaymentService(repo repositories.IPaymentRepository) IPaymentService {
@@ -25,10 +34,13 @@ func NewPaymentService(repo repositories.IPaymentRepository) IPaymentService {
 	}
 }
 
+func (s *PaymentService) CalPrice(reservedDate *entities.CreatePaymentModel) int {
+	durationHours := reservedDate.ReserveDateEnd.Sub(reservedDate.ReserveDateStart).Hours()
+	return int(durationHours * 100)
+}
+
 func (s *PaymentService) InsertPayment(userID string, reservedDate *entities.CreatePaymentModel) (*entities.PaymentModel, error) {
-	durationHours := calculateWorkHours(reservedDate.ReserveDateStart, reservedDate.ReserveDateEnd)
-	price := int(durationHours * 100)
-	return s.repo.InsertPayment(userID, price)
+	return s.repo.InsertPayment(userID, s.CalPrice(reservedDate))
 }
 
 func (s *PaymentService) FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error) {
@@ -77,51 +89,57 @@ func (s *PaymentService) UpdateByID(paymentID string, data entities.UpdatePaymen
 	return s.repo.UpdateByID(paymentID, paymentModelToRepo)
 }
 
-func calculateWorkHours(start, end time.Time) float64 {
-	// Define working hours
-	workStart := 8
-	workEnd := 17
+// CreateCheckoutSession creates a Stripe Checkout Session
+func (s *PaymentService) StripeCreatePrice(userID string, payment *entities.PaymentModel) (string, error) {
+	// prepare data - price, currenct, method
+	price := payment.Price
+	currency := "thb"
+	paymentMethod := []string{"card", "promptpay"}
+	stripe.Key = os.Getenv("STRIPE_KEY")
+	url := os.Getenv("STRIPE_REDIRECT")
 
-	if end.Before(start) {
-		return 0
+	var unitPrice int32
+	name := fmt.Sprintf("pack %v", price)
+	unitPrice = int32(price * 100)
+	metaData := map[string]string{"user_id": userID, "pay_id": payment.PayID}
+
+	params := &stripe.CheckoutSessionParams{
+		PaymentMethodTypes: stripe.StringSlice(paymentMethod),
+
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+					Currency: stripe.String(currency),
+					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+						Name: stripe.String(name),
+					},
+					UnitAmount: stripe.Int64(int64(unitPrice)),
+				},
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Mode:                stripe.String(string(stripe.CheckoutSessionModePayment)),
+		ClientReferenceID:   stripe.String(userID),
+		SuccessURL:          stripe.String(url),
+		CancelURL:           stripe.String(os.Getenv("FRONT_REDIRECT_URL_STRIPE")),
+		AllowPromotionCodes: stripe.Bool(true),
+		ExpiresAt:           stripe.Int64(time.Now().Add(60 * time.Minute).Unix()),
+		Metadata:            metaData, // blank - don't have package and salescode
 	}
-
-	totalHours := 0.0
-	current := start
-
-	for current.Before(end) {
-		// Get the working start and end of the current day
-		dayStart := time.Date(current.Year(), current.Month(), current.Day(), workStart, 0, 0, 0, current.Location())
-		dayEnd := time.Date(current.Year(), current.Month(), current.Day(), workEnd, 0, 0, 0, current.Location())
-
-		// Effective start = later of (current time, dayStart)
-		effectiveStart := maxTime(current, dayStart)
-		// Effective end = earlier of (end time, dayEnd)
-		effectiveEnd := minTime(end, dayEnd)
-
-		// Count hours if within working range
-		if effectiveEnd.After(effectiveStart) {
-			totalHours += effectiveEnd.Sub(effectiveStart).Hours()
-		}
-
-		// Move to next day
-		current = dayStart.Add(24 * time.Hour)
+	a, err := session.New(params)
+	if err != nil {
+		return "", err
 	}
-
-	return totalHours
+	return a.URL, nil
 }
 
-// Helper functions
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
+func (s *PaymentService) GetMethodAndPaydate(payIntent string) (string, string, error) {
+	pi, err := paymentintent.Get(payIntent, nil)
+	if err != nil {
+		return "", "", err
 	}
-	return b
-}
 
-func minTime(a, b time.Time) time.Time {
-	if a.Before(b) {
-		return a
-	}
-	return b
+	payDate := time.Unix(pi.Created, 0).Format(time.RFC3339)
+
+	return pi.PaymentMethodTypes[0], payDate, nil
 }

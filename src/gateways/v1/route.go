@@ -46,6 +46,10 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	payment := api.Group("/payments", middlewares.SetJWtHeaderHandler())
 	payment.Get("/", gateway.GetMyPayment)
+	payment.Post("/price", gateway.GetPrice)
 	payment.Post("/", gateway.CreatePayment)
 	payment.Patch("/:paymentID", gateway.UpdatePaymentByID)
+
+	stripe := api.Group("/stripe")
+	stripe.Post("/webhook", gateway.StripeWebhook)
 }
