@@ -413,7 +413,7 @@ func (h *HTTPGateway) GetAvailableStaff(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// find Rend < start or Rstart < end
+	// find Rend < start or Rstart > end
 	// partial find วันเริ่มจองส่งเวลาตอนจบวัน (23:59:59) วันสิ้นสุดจองส่งเวลาตอนเริ่มวัน (00:00:00)
 	// full-day find วันเริ่มจองส่งเวลาตอนเริ่มวัน (00:00:00) วันสิ้นสุดจองส่งเวลาตอนจบวัน (23:59:59)
 	var res []*entities.AvailableStaffResponse

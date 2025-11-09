@@ -140,7 +140,7 @@ func (repo *caretakerRepository) UpdateByID(userID string, data entities.UpdateU
 }
 
 func (repo *caretakerRepository) FindAvailableCaretaker(startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error) {
-	// find Rend < start or Rstart < end
+	// find Rend < start or Rstart > end
 	caretakers, err := repo.Collection.Caretaker.FindMany(
 		db.Caretaker.Leaveday.None(
 			db.Leaveday.Leaveday.Gte(startDate),
