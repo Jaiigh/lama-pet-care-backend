@@ -500,3 +500,61 @@ func (h *HTTPGateway) GetBusyTimeSlot(ctx *fiber.Ctx) error {
 		Status:  fiber.StatusOK,
 	})
 }
+
+// @Summary      Get score and reviews
+// @Description  Retrieve average score and list of reviews for a caretaker (staff). Owners and admins can view any caretaker; a caretaker may view their own reviews. If `staffID` is omitted and the caller is a caretaker, the handler defaults to the caller's ID.
+// @Tags         service
+// @Produce      json
+// @Security     BearerAuth
+// @Param        staffID path string false "Staff ID (caretaker). If omitted and caller is caretaker, defaults to caller's ID"
+// @Success      200 {object} entities.ResponseModel "Request successful"
+// @Failure      400 {object} entities.ResponseMessage "Bad request"
+// @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure      403 {object} entities.ResponseMessage "Invalid role"
+// @Failure      500 {object} entities.ResponseMessage "Internal server error"
+// @Router       /services/staff/{staffID}/score [get]
+func (h *HTTPGateway) GetScoreAndReview(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+
+	// Allow owners/admins to view any caretaker reviews. A caretaker may view their
+	// own reviews. If a caretaker supplies no staffID param, default to their ID.
+	staffID := ctx.Params("staffID")
+
+	if staffID == "" {
+		// if caller is caretaker, default to their own id
+		if token.Role == "caretaker" {
+			staffID = token.UserID
+		} else {
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "staffID is required"})
+		}
+	}
+
+	// Only allow caretaker to view their own data
+	if token.Role == "caretaker" && token.UserID != staffID {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "forbidden"})
+	}
+
+	// Owners and admins may view any staff. Other roles are forbidden.
+	if token.Role != "owner" && token.Role != "admin" && token.Role != "caretaker" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	avg, reviews, err := h.ServiceService.GetScoreAndReviewByCaretakerID(staffID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data: fiber.Map{
+			"staff_id":      staffID,
+			"average_score": avg,
+			"review_count":  len(reviews),
+			"reviews":       reviews,
+		},
+		Status: fiber.StatusOK,
+	})
+}
