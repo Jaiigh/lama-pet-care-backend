@@ -1217,6 +1217,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/services/staff/{staffID}/score": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve average score and list of reviews for a caretaker (staff). Owners and admins can view any caretaker; a caretaker may view their own reviews. If ` + "`" + `staffID` + "`" + ` is omitted and the caller is a caretaker, the handler defaults to the caller's ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service"
+                ],
+                "summary": "Get score and reviews",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Staff ID (caretaker). If omitted and caller is caretaker, defaults to caller's ID",
+                        "name": "staffID",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/services/staff/{staffID}/time": {
             "get": {
                 "security": [
