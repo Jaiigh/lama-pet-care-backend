@@ -536,14 +536,86 @@ const docTemplate = `{
                             "$ref": "#/definitions/entities.ResponseModel"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorization Token.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
                     },
+                    "403": {
+                        "description": "Stripe Error.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/price": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get price from reserveDate",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Get price",
+                "parameters": [
+                    {
+                        "description": "payment payload include time",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreatePaymentModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved payments",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
