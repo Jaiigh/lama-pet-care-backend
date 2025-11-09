@@ -2,7 +2,9 @@ package services
 
 import (
 	"fmt"
+	"math"
 	"sort"
+	"strings"
 	"time"
 
 	"lama-backend/domain/entities"
@@ -31,6 +33,7 @@ type IServiceService interface {
 	UpdateStatus(serviceID, status, role, userID string) error
 	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
 	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error)
+	GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error)
 }
 
 func NewServiceService(
@@ -301,6 +304,44 @@ func (s *ServiceService) FindBusyTimeSlot(serviceType string, staffID string, st
 		StartDateTime: startTimes,
 		EndDateTime:   endTimes,
 	}, nil
+}
+
+func (s *ServiceService) GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error) {
+	subservices, err := s.CserviceRepo.FindByCaretakerID(caretakerID)
+	if err != nil {
+		return 0.0, nil, err
+	}
+
+	var total int
+	var count int
+	var reviews []*entities.SubService
+
+	for _, ss := range subservices {
+		if ss.Score != nil {
+			total += *ss.Score
+			count++
+		}
+		if ss.Comment != nil {
+			trimmed := strings.TrimSpace(*ss.Comment)
+			if trimmed != "" {
+				c := trimmed
+				reviews = append(reviews, &entities.SubService{
+					ServiceID: ss.ServiceID,
+					StaffID:   ss.StaffID,
+					Comment:   &c,
+					Score:     ss.Score,
+				})
+			}
+		}
+	}
+
+	if count == 0 {
+		return 0.0, reviews, nil
+	}
+
+	avg := float64(total) / float64(count)
+	avg = math.Round(avg*10) / 10
+	return avg, reviews, nil
 }
 
 // helper to compare date only (ignore time)
