@@ -45,6 +45,18 @@ type UpdateServiceRequest struct {
 	Score            *int       `json:"score,omitempty" validate:"omitempty,gte=1,lte=5"`
 }
 
+type ReviewRequest struct {
+	Comment *string `json:"comment,omitempty" validate:"omitempty,min=1,max=1000"`
+	Score   *int    `json:"score,omitempty" validate:"omitempty,gte=1,lte=5"`
+}
+
+type ReviewResponse struct {
+	ServiceID string  `json:"service_id"`
+	StaffID   string  `json:"staff_id"`
+	Comment   *string `json:"comment,omitempty"`
+	Score     *int    `json:"score,omitempty"`
+}
+
 type SubService struct {
 	ServiceID string  `json:"service_id"`
 	StaffID   string  `json:"staff_id"`
