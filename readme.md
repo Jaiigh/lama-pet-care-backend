@@ -14,6 +14,10 @@ RESEND_API_KEY=<resend api key>
 
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=<supabase api key>
+
+STRIPE_KEY=<strpie key>
+STRIPE_REDIRECT=https://lama-pet-care-frontend.vercel.app/
+FRONT_REDIRECT_URL_STRIPE=<frontend stripe page>
 ```
 # Install dependencies
 ```
