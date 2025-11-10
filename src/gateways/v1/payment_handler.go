@@ -4,6 +4,7 @@ import (
 	"errors"
 	"lama-backend/domain/entities"
 	"lama-backend/src/middlewares"
+	"strconv"
 	"time"
 
 	"lama-backend/domain/prisma/db"
@@ -108,41 +109,39 @@ func (h *HTTPGateway) GetPrice(ctx *fiber.Ctx) error {
 // @Tags         payment
 // @Produce      json
 // @Security     BearerAuth
-// @Param        body body entities.CreatePaymentModel true "payment payload include time"
+// @Param        price path int true "service price"
 // @Success      200 {object} entities.ResponseModel "Successfully retrieved payments"
 // @Failure      400 {object} entities.ResponseMessage "Bad Request"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure      403 {object} entities.ResponseMessage "Stripe Error."
 // @Failure      422 {object} entities.ResponseMessage "Validation error."
 // @Failure      500 {object} entities.ResponseMessage "Internal server error"
-// @Router       /payments [post]
+// @Router       /payments/{price} [post]
 func (h *HTTPGateway) CreatePayment(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	var bodydata entities.CreatePaymentModel
-	if err := ctx.BodyParser(&bodydata); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
+	priceStr := ctx.Params("price")
+	if priceStr == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "missing price parameter",
 		})
 	}
-	if err := validator.New().Struct(bodydata); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
-	}
 
-	bodydata.ReserveDateEnd = bodydata.ReserveDateEnd.Truncate(time.Hour)
-	bodydata.ReserveDateStart = bodydata.ReserveDateStart.Truncate(time.Hour)
-	if !bodydata.ReserveDateEnd.After(bodydata.ReserveDateStart) {
-		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
+	price, err := strconv.Atoi(priceStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid price format",
+		})
 	}
 
 	var payment *entities.PaymentModel
 
 	switch token.Role {
 	case "owner", "admin":
-		payment, err = h.PaymentService.InsertPayment(token.UserID, &bodydata)
+		payment, err = h.PaymentService.InsertPayment(token.UserID, price)
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 		}
@@ -170,8 +169,8 @@ func (h *HTTPGateway) CreatePayment(ctx *fiber.Ctx) error {
 // @Tags         payment
 // @Produce      json
 // @Security     BearerAuth
-// @Param        paymentID  path  string  true  "Payment ID"
-// @Param        status     path  string  true  "New status for the payment" Enums(paid, unpaid, pending)
+// @Param        paymentID  path  string                        true  "Payment ID"
+// @Param        body       body  entities.UpdatePaymentRequest true  "payment update data"
 // @Success      200 {object} entities.ResponseModel "Successfully updated payment status"
 // @Failure      400 {object} entities.ResponseMessage "Bad request"
 // @Failure      401 {object} entities.ResponseMessage "Unauthorization Token."

@@ -20,7 +20,7 @@ type PaymentService struct {
 
 type IPaymentService interface {
 	CalPrice(reservedDate *entities.CreatePaymentModel) int
-	InsertPayment(userID string, reservedDate *entities.CreatePaymentModel) (*entities.PaymentModel, error)
+	InsertPayment(userID string, price int) (*entities.PaymentModel, error)
 	FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error)
@@ -39,8 +39,8 @@ func (s *PaymentService) CalPrice(reservedDate *entities.CreatePaymentModel) int
 	return int(durationHours * 100)
 }
 
-func (s *PaymentService) InsertPayment(userID string, reservedDate *entities.CreatePaymentModel) (*entities.PaymentModel, error) {
-	return s.repo.InsertPayment(userID, s.CalPrice(reservedDate))
+func (s *PaymentService) InsertPayment(userID string, price int) (*entities.PaymentModel, error) {
+	return s.repo.InsertPayment(userID, price)
 }
 
 func (s *PaymentService) FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error) {
