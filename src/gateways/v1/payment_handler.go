@@ -136,6 +136,11 @@ func (h *HTTPGateway) CreatePayment(ctx *fiber.Ctx) error {
 			Message: "invalid price format",
 		})
 	}
+	if price%100 != 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{
+			Message: "invalid price format",
+		})
+	}
 
 	var payment *entities.PaymentModel
 
