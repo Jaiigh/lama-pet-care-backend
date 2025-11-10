@@ -152,7 +152,7 @@ func (h *HTTPGateway) FindAllPets(ctx *fiber.Ctx) error {
 // @Failure 404 {object} entities.ResponseMessage "pet not found"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /pets/{petID} [put]
+// @Router /pets/{petID} [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) UpdatePet(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
