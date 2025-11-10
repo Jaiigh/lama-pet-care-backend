@@ -561,3 +561,114 @@ func (h *HTTPGateway) GetScoreAndReview(ctx *fiber.Ctx) error {
 		Status: fiber.StatusOK,
 	})
 }
+
+// @Summary Update cservice score and review
+// @Description Owner-only endpoint to review cservice. The caller must be the owner of the service and the service must be finished. Either `score` or `comment` (or both) must be provided.
+// @Tags service
+// @Accept json
+// @Produce json
+// @Param serviceID path string true "Service ID"
+// @Param body body entities.ReviewRequest true "Review payload (score: integer 1-5, comment: optional)"
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid request or missing fields"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role or owner mismatch"
+// @Failure 404 {object} entities.ResponseMessage "Service not found"
+// @Failure 422 {object} entities.ResponseMessage "Validation error"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /services/{serviceID}/review [patch]
+// @Security BearerAuth
+func (h *HTTPGateway) Review(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "owner" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	serviceID := ctx.Params("serviceID")
+	if serviceID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid service ID"})
+	}
+
+	var rreq entities.ReviewRequest
+	if err := ctx.BodyParser(&rreq); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
+	}
+
+	if rreq.Comment != nil {
+		trimmed := strings.TrimSpace(*rreq.Comment)
+		if trimmed == "" {
+			rreq.Comment = nil
+		} else {
+			*rreq.Comment = trimmed
+		}
+	}
+
+	if rreq.Comment == nil && rreq.Score == nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "no fields to update"})
+	}
+
+	if err := validator.New().Struct(rreq); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
+			Message: utils.FormatValidationError(err),
+		})
+	}
+
+	svc, err := h.ServiceService.FindServiceByID(serviceID)
+	if err != nil {
+		switch {
+		case errors.Is(err, db.ErrNotFound):
+			return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "service not found"})
+		default:
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	}
+
+	// Owner must be the service owner
+	if svc.OwnerID != token.UserID {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "You do not own this service"})
+	}
+
+	// Only caretaker services can be reviewed here
+	if svc.ServiceType != "cservice" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "only cservice can be reviewed"})
+	}
+
+	// Only finished services may be reviewed
+	if svc.Status != db.ServiceStatusFinish {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "service must be finished to be reviewed"})
+	}
+
+	var updReq entities.UpdateServiceRequest
+	updReq.Comment = rreq.Comment
+	updReq.Score = rreq.Score
+
+	updatedService, err := h.ServiceService.UpdateServiceByID(serviceID, updReq)
+	if err != nil {
+		switch {
+		case errors.Is(err, db.ErrNotFound):
+			return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "service not found"})
+		case strings.Contains(strings.ToLower(err.Error()), "invalid"),
+			strings.Contains(strings.ToLower(err.Error()), "required"):
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: err.Error()})
+		default:
+			return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+		}
+	}
+
+	// Return a compact review response
+	resp := entities.ReviewResponse{
+		ServiceID: updatedService.Sid,
+		StaffID:   updatedService.StaffID,
+		Comment:   updatedService.Comment,
+		Score:     updatedService.Score,
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "review submitted",
+		Data:    resp,
+		Status:  fiber.StatusOK,
+	})
+}

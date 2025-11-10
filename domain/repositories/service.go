@@ -103,7 +103,33 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	}
 
 	if len(updates) == 0 {
-		return nil, fmt.Errorf("service -> UpdateByID: no fields to update")
+		// No direct Service table fields to update. Fetch current service and
+		// return it so the caller (service layer) can proceed to update the
+		// related subservice (cservice/mservice) fields like comment/score.
+		current, err := repo.Collection.Service.FindUnique(
+			db.Service.Sid.Equals(serviceID),
+		).With(
+			db.Service.Cservice.Fetch(),
+			db.Service.Mservice.Fetch(),
+		).Exec(repo.Context)
+		if err != nil {
+			return nil, fmt.Errorf("service -> UpdateByID: %v", err)
+		}
+		if current == nil {
+			return nil, fmt.Errorf("service -> UpdateByID: service not found")
+		}
+
+		result := mapServiceModel(current)
+		// Merge any subservice-related incoming values so caller can use them
+		// when updating the subservice.
+		if data.StaffID != nil {
+			result.StaffID = *data.StaffID
+		}
+		result.Disease = data.Disease
+		result.Comment = data.Comment
+		result.Score = data.Score
+
+		return result, nil
 	}
 
 	updatedService, err := repo.Collection.Service.FindUnique(
