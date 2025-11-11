@@ -2,10 +2,8 @@ package utils
 
 import (
 	"fmt"
-	// "regexp"
 
 	"os"
-
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/resend/resend-go/v2"
