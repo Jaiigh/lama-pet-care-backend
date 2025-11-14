@@ -22,6 +22,7 @@ type ServiceService struct {
 }
 
 type IServiceService interface {
+	ValidateServiceCreation(data entities.CreateServiceRequest, payment_status string) error
 	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error)
 	UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
@@ -54,38 +55,67 @@ func NewServiceService(
 	}
 }
 
-func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
+func (s *ServiceService) ValidateServiceCreation(data entities.CreateServiceRequest, payment_status string) error {
+	// status exist
 	status := db.ServiceStatus(data.Status)
 	validStatuses := map[db.ServiceStatus]bool{
 		db.ServiceStatusWait:    true,
 		db.ServiceStatusOngoing: true,
 		db.ServiceStatusFinish:  true,
 	}
-
 	if !validStatuses[status] {
-		return nil, fmt.Errorf("service -> CreateService: invalid status %q", data.Status)
+		return fmt.Errorf("service -> CreateServiceStripe: invalid status %q", data.Status)
+	}
+
+	// staff exist
+	switch data.ServiceType {
+	case "cservice":
+		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
+			return fmt.Errorf("service -> CreateServiceStripe: caretaker not found: %w", err)
+		}
+	case "mservice":
+		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
+			return fmt.Errorf("service -> CreateServiceStripe: doctor not found: %w", err)
+		}
+	default:
+		return fmt.Errorf("service -> CreateServiceStripe: invalid service_type %q", data.ServiceType)
+	}
+
+	// payment exist
+	payment, err := s.PaymentRepo.FindByID(data.PaymentID)
+	if err != nil {
+		return fmt.Errorf("service -> CreateServiceStripe: failed to receive payment: %w", err)
+	}
+	if payment.OwnerID != data.OwnerID {
+		return fmt.Errorf("service -> CreateServiceStripe: service owner and payment owner have to be same person")
+	}
+
+	// payment status correct
+	switch payment_status {
+	case "unpaid":
+		if payment.Status != db.PaymentStatusUnpaid {
+			return fmt.Errorf("service -> CreateServiceStripe: payment must be UnPaid before pay")
+		}
+	case "paid":
+		if payment.Status != db.PaymentStatusPaid {
+			return fmt.Errorf("service -> CreateServiceStripe: payment must be Paid before create service")
+		}
+	default:
+		return fmt.Errorf("service -> CreateServiceStripe: invalid payment status %q", payment_status)
+	}
+
+	return nil
+}
+
+func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
+	if err := s.ValidateServiceCreation(data, "paid"); err != nil {
+		return nil, err
 	}
 
 	var result *entities.ServiceModel
+	var err error
 	switch data.ServiceType {
 	case "cservice":
-		// find caretaker
-		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: caretaker not found: %w", err)
-		}
-
-		// find payment
-		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
-		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
-		}
-		if payment.OwnerID != data.OwnerID {
-			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
-		}
-		if payment.Status != db.PaymentStatusPaid {
-			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
-		}
-
 		// insert service
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
@@ -96,21 +126,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
 		}
 	case "mservice":
-		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: doctor not found: %w", err)
-		}
-
-		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
-		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
-		}
-		if payment.OwnerID != data.OwnerID {
-			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
-		}
-		if payment.Status != db.PaymentStatusPaid {
-			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
-		}
-
 		if result, err = s.Repo.Insert(data); err != nil {
 			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
