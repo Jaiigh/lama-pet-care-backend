@@ -7,6 +7,7 @@ import (
 
 type ServiceModel struct {
 	Sid              string           `json:"service_id"`
+	ShowId           int              `json:"show_id"`
 	OwnerID          string           `json:"owner_id"`
 	PetID            string           `json:"pet_id"`
 	PaymentID        string           `json:"payment_id"`
