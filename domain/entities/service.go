@@ -24,7 +24,7 @@ type ServiceModel struct {
 type CreateServiceRequest struct {
 	OwnerID          string    `json:"owner_id,omitempty" validate:"omitempty,uuid4"`
 	PetID            string    `json:"pet_id" validate:"required,uuid4"`
-	PaymentID        string    `json:"payment_id,omitempty" validate:"required,uuid4"`
+	PaymentID        string    `json:"payment_id,omitempty"` // for backend
 	StaffID          string    `json:"staff_id" validate:"required,uuid4"`
 	ServiceType      string    `json:"service_type" validate:"required,oneof=mservice cservice"`
 	Status           string    `json:"status" validate:"required,oneof=wait ongoing finish"`
