@@ -505,60 +505,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/payments/price": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get price from reserveDate",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "payment"
-                ],
-                "summary": "Get price",
-                "parameters": [
-                    {
-                        "description": "payment payload include time",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.CreatePaymentModel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved payments",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            }
-        },
         "/payments/{paymentID}": {
             "patch": {
                 "security": [
@@ -619,70 +565,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Payment not found.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            }
-        },
-        "/payments/{price}": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create payments. Only user and admin can create payment",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "payment"
-                ],
-                "summary": "Create payments",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "service price",
-                        "name": "price",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved payments",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "403": {
-                        "description": "Stripe Error.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error.",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
@@ -1073,7 +955,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields.",
+                "description": "Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields. this route then create payment and send those to stripe to get payment link.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1083,7 +965,7 @@ const docTemplate = `{
                 "tags": [
                     "service"
                 ],
-                "summary": "Create caretaker/medical service",
+                "summary": "Create caretaker/medical service by stripe payment",
                 "parameters": [
                     {
                         "description": "service payload (admins must include owner_id; mservice requires disease)",
@@ -1867,25 +1749,9 @@ const docTemplate = `{
                 "RoleCaretaker"
             ]
         },
-        "entities.CreatePaymentModel": {
-            "type": "object",
-            "required": [
-                "reserve_date_end",
-                "reserve_date_start"
-            ],
-            "properties": {
-                "reserve_date_end": {
-                    "type": "string"
-                },
-                "reserve_date_start": {
-                    "type": "string"
-                }
-            }
-        },
         "entities.CreateServiceRequest": {
             "type": "object",
             "required": [
-                "payment_id",
                 "pet_id",
                 "reserve_date_end",
                 "reserve_date_start",
@@ -1902,6 +1768,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_id": {
+                    "description": "for backend",
                     "type": "string"
                 },
                 "pet_id": {
