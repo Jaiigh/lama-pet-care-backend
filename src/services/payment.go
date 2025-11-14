@@ -19,12 +19,11 @@ type PaymentService struct {
 }
 
 type IPaymentService interface {
-	CalPrice(reservedDate *entities.CreatePaymentModel) int
-	InsertPayment(userID string, price int) (*entities.PaymentModel, error)
+	InsertPayment(userID string, reserve_date_end, reserve_date_start time.Time) (*entities.PaymentModel, error)
 	FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error)
-	StripeCreatePrice(userID string, payment *entities.PaymentModel) (string, error)
+	StripeCreatePrice(service *entities.CreateServiceRequest, price int) (string, error)
 	GetMethodAndPaydate(payIntent string) (string, string, error)
 }
 
@@ -34,12 +33,13 @@ func NewPaymentService(repo repositories.IPaymentRepository) IPaymentService {
 	}
 }
 
-func (s *PaymentService) CalPrice(reservedDate *entities.CreatePaymentModel) int {
-	durationHours := reservedDate.ReserveDateEnd.Sub(reservedDate.ReserveDateStart).Hours()
+func CalPrice(reserve_date_end, reserve_date_start time.Time) int {
+	durationHours := reserve_date_end.Sub(reserve_date_start).Hours()
 	return int(durationHours * 100)
 }
 
-func (s *PaymentService) InsertPayment(userID string, price int) (*entities.PaymentModel, error) {
+func (s *PaymentService) InsertPayment(userID string, reserve_date_end, reserve_date_start time.Time) (*entities.PaymentModel, error) {
+	price := CalPrice(reserve_date_end, reserve_date_start)
 	return s.repo.InsertPayment(userID, price)
 }
 
@@ -90,9 +90,8 @@ func (s *PaymentService) UpdateByID(paymentID string, data entities.UpdatePaymen
 }
 
 // CreateCheckoutSession creates a Stripe Checkout Session
-func (s *PaymentService) StripeCreatePrice(userID string, payment *entities.PaymentModel) (string, error) {
-	// prepare data - price, currenct, method
-	price := payment.Price
+func (s *PaymentService) StripeCreatePrice(service *entities.CreateServiceRequest, price int) (string, error) {
+	// prepare data - price, currenct, method (price already in pass)
 	currency := "thb"
 	paymentMethod := []string{"card", "promptpay"}
 	stripe.Key = os.Getenv("STRIPE_KEY")
@@ -101,7 +100,21 @@ func (s *PaymentService) StripeCreatePrice(userID string, payment *entities.Paym
 	var unitPrice int32
 	name := fmt.Sprintf("pack %v", price)
 	unitPrice = int32(price * 100)
-	metaData := map[string]string{"user_id": userID, "pay_id": payment.PayID}
+	metaData := map[string]string{
+		"owner_id":           service.OwnerID,
+		"pet_id":             service.PetID,
+		"payment_id":         service.PaymentID,
+		"staff_id":           service.StaffID,
+		"service_type":       service.ServiceType,
+		"status":             string(service.Status),
+		"reserve_date_start": service.ReserveDateStart.Format(time.RFC3339),
+		"reserve_date_end":   service.ReserveDateEnd.Format(time.RFC3339),
+	}
+
+	// Optional disease
+	if service.Disease != nil {
+		metaData["disease"] = *service.Disease
+	}
 
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice(paymentMethod),
@@ -119,7 +132,7 @@ func (s *PaymentService) StripeCreatePrice(userID string, payment *entities.Paym
 			},
 		},
 		Mode:                stripe.String(string(stripe.CheckoutSessionModePayment)),
-		ClientReferenceID:   stripe.String(userID),
+		ClientReferenceID:   stripe.String(service.OwnerID),
 		SuccessURL:          stripe.String(url),
 		CancelURL:           stripe.String(os.Getenv("FRONT_REDIRECT_URL_STRIPE")),
 		AllowPromotionCodes: stripe.Bool(true),

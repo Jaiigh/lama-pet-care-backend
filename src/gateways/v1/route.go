@@ -26,7 +26,7 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	user.Delete("/", gateway.DeleteUserByID)
 
 	services := api.Group("/services", middlewares.SetJWtHeaderHandler())
-	services.Post("/", gateway.CreateService)
+	services.Post("/", gateway.CreateServiceStripe)
 	services.Get("/", gateway.GetMyServices)
 	services.Patch("/:serviceID", gateway.UpdateService)
 	services.Delete("/:serviceID", gateway.DeleteService)
@@ -52,5 +52,5 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	payment.Patch("/:paymentID", gateway.UpdatePaymentByID)
 
 	stripe := api.Group("/stripe")
-	stripe.Post("/webhook", gateway.StripeWebhook)
+	stripe.Post("/service", gateway.StripeWebhookService)
 }

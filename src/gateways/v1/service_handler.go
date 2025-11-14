@@ -14,7 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// @Summary Create caretaker/medical service
+// @Summary make a stripe payment to Create caretaker/medical service
 // @Description Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields.
 // @Tags service
 // @Accept json
@@ -28,7 +28,7 @@ import (
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /services [post]
 // @Security BearerAuth
-func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
+func (h *HTTPGateway) CreateServiceStripe(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
@@ -86,17 +86,26 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
 	}
 
-	service, err := h.ServiceService.CreateService(req)
+	payment, err := h.PaymentService.InsertPayment(req.OwnerID, req.ReserveDateEnd, req.ReserveDateStart)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
-			Message: "cannot create service: " + err.Error(),
+			Message: "cannot create payment: " + err.Error(),
 		})
+	}
+	req.PaymentID = payment.PayID
+
+	stripe_link, err := h.PaymentService.StripeCreatePrice(&req, payment.Price)
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseModel{Message: "Error to get link"})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(entities.ResponseModel{
 		Message: "service created",
-		Data:    service,
-		Status:  fiber.StatusCreated,
+		Data: fiber.Map{
+			"payment_id":  payment.PayID,
+			"stripe_link": stripe_link,
+		},
+		Status: fiber.StatusCreated,
 	})
 }
 
