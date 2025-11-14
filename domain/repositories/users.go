@@ -19,6 +19,7 @@ type IUsersRepository interface {
 	InsertUser(role string, data entities.CreatedUserModel) (*entities.UserDataModel, error)
 	FindByEmailAndRole(email string, role string) (*entities.LoginUserResponseModel, error)
 	FindByID(userID string) (*entities.UserDataModel, error)
+	FindAll(role string, offset, limit int) ([]*entities.UserDataModel, error)
 	DeleteByID(userID string) (*entities.UserDataModel, error)
 	UpdateByID(userID string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
@@ -86,6 +87,40 @@ func (repo *usersRepository) FindByID(userID string) (*entities.UserDataModel, e
 	}
 
 	return MapToEntities(user), nil
+}
+
+func (repo *usersRepository) FindAll(role string, offset, limit int) ([]*entities.UserDataModel, error) {
+	params := []db.UsersWhereParam{}
+	if role != "" && role != "all" {
+		params = append(params, db.Users.Role.Equals(db.Role(role)))
+	}
+
+	query := repo.Collection.Users.FindMany(params...).With(
+		db.Users.Caretaker.Fetch(),
+		db.Users.Doctor.Fetch(),
+		db.Users.Owner.Fetch(),
+	).OrderBy(
+		db.Users.CreatedAt.Order(db.SortOrderDesc),
+	)
+	if offset > 0 {
+		query = query.Skip(offset)
+	}
+	if limit > 0 {
+		query = query.Take(limit)
+	}
+
+	users, err := query.Exec(repo.Context)
+	if err != nil {
+		return nil, fmt.Errorf("users -> FindAll: %v", err)
+	}
+
+	result := make([]*entities.UserDataModel, 0, len(users))
+	for i := range users {
+		user := users[i]
+		result = append(result, MapToEntities(&user))
+	}
+
+	return result, nil
 }
 
 func (repo *usersRepository) DeleteByID(userID string) (*entities.UserDataModel, error) {

@@ -14,6 +14,7 @@ type UsersService struct {
 
 type IUsersService interface {
 	FindUsersByID(id string) (*entities.UserDataModel, error)
+	FindAllUsers(role string, page, limit int) ([]*entities.UserDataModel, error)
 	DeleteUsersByID(id string) (*entities.UserDataModel, error)
 	UpdateUsersByID(id string, data entities.UpdateUserModel) (*entities.UserDataModel, error)
 }
@@ -30,6 +31,17 @@ func NewUsersService(repoUsers repositories.IUsersRepository, repoOwner reposito
 func (s *UsersService) FindUsersByID(id string) (*entities.UserDataModel, error) {
 	// You may want to add validation or logging here
 	return s.UsersRepository.FindByID(id)
+}
+
+func (s *UsersService) FindAllUsers(role string, page, limit int) ([]*entities.UserDataModel, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+	return s.UsersRepository.FindAll(role, offset, limit)
 }
 
 func (s *UsersService) DeleteUsersByID(id string) (*entities.UserDataModel, error) {

@@ -81,6 +81,21 @@ func (mr *MockIUsersRepositoryMockRecorder) FindByID(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockIUsersRepository)(nil).FindByID), arg0)
 }
 
+// FindAll mocks base method.
+func (m *MockIUsersRepository) FindAll(arg0 string, arg1, arg2 int) ([]*entities.UserDataModel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAll", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*entities.UserDataModel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAll indicates an expected call of FindAll.
+func (mr *MockIUsersRepositoryMockRecorder) FindAll(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockIUsersRepository)(nil).FindAll), arg0, arg1, arg2)
+}
+
 // InsertUser mocks base method.
 func (m *MockIUsersRepository) InsertUser(arg0 string, arg1 entities.CreatedUserModel) (*entities.UserDataModel, error) {
 	m.ctrl.T.Helper()

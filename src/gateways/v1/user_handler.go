@@ -149,3 +149,46 @@ func (h *HTTPGateway) UpdateUserPicture(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(updatedUser)
 }
+
+// @Summary list users
+// @Description Admin-only endpoint that returns paginated users with an optional role filter.
+// @Tags user
+// @Produce json
+// @Param role query string false "Filter by role (admin, owner, caretaker, doctor)"
+// @Param page query int false "Page number for pagination" [optional default: 1]
+// @Param limit query int false "Number of users per page" [optional default: 20]
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 500 {object} entities.ResponseMessage "Internal server error"
+// @Router /admin/users [get]
+// @Security BearerAuth
+func (h *HTTPGateway) GetAllUsers(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	role := ctx.Query("role")
+	page := ctx.QueryInt("page", 1)
+	limit := ctx.QueryInt("limit", 20)
+
+	users, err := h.UsersService.FindAllUsers(role, page, limit)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "success",
+		Data: fiber.Map{
+			"page":   page,
+			"limit":  limit,
+			"amount": len(users),
+			"users":  users,
+		},
+		Status: fiber.StatusOK,
+	})
+}
