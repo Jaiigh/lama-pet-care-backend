@@ -23,7 +23,7 @@ type ServiceService struct {
 
 type IServiceService interface {
 	ValidateServiceCreation(data entities.CreateServiceRequest, payment_status string) error
-	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error)
+	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, *entities.SubService, error)
 	UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
@@ -107,36 +107,38 @@ func (s *ServiceService) ValidateServiceCreation(data entities.CreateServiceRequ
 	return nil
 }
 
-func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
+func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, *entities.SubService, error) {
 	if err := s.ValidateServiceCreation(data, "paid"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var result *entities.ServiceModel
+	var service *entities.ServiceModel
+	var subService *entities.SubService
 	var err error
 	switch data.ServiceType {
 	case "cservice":
 		// insert service
-		if result, err = s.Repo.Insert(data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+		if service, err = s.Repo.Insert(data); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
 
 		// insert subservice
-		if _, err = s.CserviceRepo.Insert(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
+		if subService, err = s.CserviceRepo.Insert(*mapToSubService(*service)); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
 		}
 	case "mservice":
-		if result, err = s.Repo.Insert(data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+		if service, err = s.Repo.Insert(data); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
 
-		if _, err = s.MserviceRepo.Insert(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
+		service.Disease = data.Disease
+		if subService, err = s.MserviceRepo.Insert(*mapToSubService(*service)); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
 		}
 	default:
-		return nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
+		return nil, nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
 	}
-	return result, nil
+	return service, subService, nil
 }
 
 func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error) {

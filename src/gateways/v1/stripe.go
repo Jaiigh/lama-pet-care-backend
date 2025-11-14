@@ -3,7 +3,9 @@ package gateways
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"lama-backend/domain/entities"
+	"time"
 
 	"lama-backend/domain/prisma/db"
 
@@ -17,41 +19,41 @@ func (h *HTTPGateway) StripeWebhookService(ctx *fiber.Ctx) error {
 	event := stripe.Event{}
 	err := json.Unmarshal(payload, &event)
 	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseModel{Message: "Unauthorization Webhook."})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Webhook."})
 	}
 
 	// check stripe payment_status
 	if stripeStatus, ok := event.Data.Object["payment_status"]; !ok || stripeStatus.(string) != "paid" {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{Message: "stripe payment_status is not paid"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "stripe payment_status is not paid"})
 	}
 	status := "PAID"
 
 	// get method and paydate from payment_intent
 	payIntent, ok := event.Data.Object["payment_intent"]
 	if !ok {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{Message: "cannot get payment_intent from stripe"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot get payment_intent from stripe"})
 	}
 	method, paydate, err := h.PaymentService.GetMethodAndPaydate(payIntent.(string))
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{Message: "cannot get method from payment_intent"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot get method or paydate from payment_intent:" + err.Error()})
 	}
 
 	// get metadata
 	metadataRaw, ok := event.Data.Object["metadata"]
 	if !ok {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{Message: "cannot get metadata from stripe"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "cannot get metadata from stripe"})
 	}
 	metadata, ok := metadataRaw.(map[string]interface{})
 	if !ok {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
 			Message: "metadata type assertion failed",
 		})
 	}
 
-	// get user_id and pay_id from metadata
-	payId, ok := metadata["pay_id"]
+	// get user_id and payment_id from metadata
+	payId, ok := metadata["payment_id"]
 	if !ok {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseModel{Message: "metadata not have pay_id"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: "metadata not have pay_id"})
 	}
 
 	// update payment
@@ -70,16 +72,45 @@ func (h *HTTPGateway) StripeWebhookService(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}
 
-	// service, err := h.ServiceService.CreateService(req)
-	// if err != nil {
-	// 	return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
-	// 		Message: "cannot create service: " + err.Error(),
-	// 	})
-	// }
+	start, err := time.Parse(time.RFC3339, metadata["reserve_date_start"].(string))
+	if err != nil {
+		return fmt.Errorf("invalid reserve_date_start: %w", err)
+	}
+
+	end, err := time.Parse(time.RFC3339, metadata["reserve_date_end"].(string))
+	if err != nil {
+		return fmt.Errorf("invalid reserve_date_end: %w", err)
+	}
+	disease := ""
+	if val, ok := metadata["disease"]; ok {
+		disease = val.(string)
+	}
+	createService := entities.CreateServiceRequest{
+		OwnerID:          metadata["owner_id"].(string),
+		PetID:            metadata["pet_id"].(string),
+		PaymentID:        updatedPayment.PayID,
+		StaffID:          metadata["staff_id"].(string),
+		ServiceType:      metadata["service_type"].(string),
+		Status:           metadata["status"].(string),
+		ReserveDateStart: start,
+		ReserveDateEnd:   end,
+		Disease:          &disease,
+	}
+
+	service, subservice, err := h.ServiceService.CreateService(createService)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
+			Message: "cannot create service: " + err.Error(),
+		})
+	}
 
 	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
 		Message: "payment updated successfully",
-		Data:    updatedPayment,
-		Status:  fiber.StatusOK,
+		Data: fiber.Map{
+			"payment":    updatedPayment,
+			"service":    service,
+			"subservice": subservice,
+		},
+		Status: fiber.StatusOK,
 	})
 }
