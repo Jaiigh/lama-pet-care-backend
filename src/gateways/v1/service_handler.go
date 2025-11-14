@@ -591,7 +591,7 @@ func (h *HTTPGateway) GetScoreAndReview(ctx *fiber.Ctx) error {
 // @Failure 404 {object} entities.ResponseMessage "Service not found"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /services/{serviceID}/review [patch]
+// @Router /services/review/{serviceID} [patch]
 // @Security BearerAuth
 func (h *HTTPGateway) Review(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
