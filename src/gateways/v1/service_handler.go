@@ -82,7 +82,7 @@ func (h *HTTPGateway) CreateServiceStripe(ctx *fiber.Ctx) error {
 	}
 	req.ReserveDateEnd = req.ReserveDateEnd.Truncate(time.Hour)
 	req.ReserveDateStart = req.ReserveDateStart.Truncate(time.Hour)
-	if !req.ReserveDateEnd.After(req.ReserveDateStart) {
+	if !req.ReserveDateStart.Before(req.ReserveDateEnd) {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
 	}
 
