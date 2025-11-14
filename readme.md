@@ -1,5 +1,5 @@
 # lama-backend
-swagger url: https://lama-pet-care-backend-dev.onrender.com/swagger/index.html
+swagger url: https://lama-pet-care-backend-domain/swagger/index.html
 # Set Environment `.env`
 ```
 DATABASE_URL="<transaction_pooler>?pgbouncer=true&connect_timeout=10"
@@ -16,7 +16,7 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=<supabase api key>
 
 STRIPE_KEY=<strpie key>
-STRIPE_REDIRECT=https://lama-pet-care-frontend.vercel.app/
+STRIPE_REDIRECT=<reserve page url>
 FRONT_REDIRECT_URL_STRIPE=<frontend stripe page>
 ```
 # Install dependencies
