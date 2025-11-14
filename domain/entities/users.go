@@ -27,6 +27,18 @@ type UserDataModel struct {
 	TotalSpending   db.Decimal `json:"total_spending,omitempty"`
 }
 
+type StaffCommonData struct {
+	UserID          string     `json:"user_id"`
+	ShowID          int        `json:"show_id"`
+	Role            db.Role    `json:"role"`
+	Name            string     `json:"name"`
+	TelephoneNumber string     `json:"telephone_number"`
+	Profile         string     `json:"profile,omitempty"`
+	LicenseNumber   string     `json:"license_number,omitempty"`
+	Specialization  string     `json:"specialization,omitempty"`
+	Rating          db.Decimal `json:"rating,omitempty"`
+}
+
 type SendEmailModel struct {
 	Email string  `json:"email" validate:"required,email"`
 	Role  db.Role `json:"role" validate:"required"`

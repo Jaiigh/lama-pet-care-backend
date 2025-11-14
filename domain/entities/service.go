@@ -15,11 +15,12 @@ type ServiceModel struct {
 	ReserveDateStart time.Time        `json:"reserve_date_start"`
 	ReserveDateEnd   time.Time        `json:"reserve_date_end"`
 
-	ServiceType string  `json:"service_type"`
-	StaffID     string  `json:"staff_id"`
-	Disease     *string `json:"disease,omitempty"`
-	Comment     *string `json:"comment,omitempty"`
-	Score       *int    `json:"score,omitempty"`
+	ServiceType string          `json:"service_type"`
+	StaffID     string          `json:"staff_id"`
+	Staff       StaffCommonData `json:"staff"`
+	Disease     *string         `json:"disease,omitempty"`
+	Comment     *string         `json:"comment,omitempty"`
+	Score       *int            `json:"score,omitempty"`
 }
 
 type CreateServiceRequest struct {
@@ -60,7 +61,7 @@ type ReviewResponse struct {
 
 type SubService struct {
 	ServiceID string  `json:"service_id"`
-	StaffID   string  `json:"staff_id"`
+	StaffID   string  `json:"staff_id,omitempty"`
 	Disease   *string `json:"disease,omitempty"`
 	Comment   *string `json:"comment,omitempty"`
 	Score     *int    `json:"score,omitempty"`

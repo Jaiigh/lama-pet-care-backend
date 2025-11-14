@@ -14,6 +14,7 @@ import (
 
 type ServiceService struct {
 	Repo          repositories.IServiceRepository
+	UserRepo      repositories.IUsersRepository
 	CaretakerRepo repositories.ICaretakerRepository
 	DoctorRepo    repositories.IDoctorRepository
 	MserviceRepo  repositories.IMServiceRepository
@@ -39,6 +40,7 @@ type IServiceService interface {
 
 func NewServiceService(
 	repo repositories.IServiceRepository,
+	userRepo repositories.IUsersRepository,
 	caretakerRepo repositories.ICaretakerRepository,
 	doctorRepo repositories.IDoctorRepository,
 	mserviceRepo repositories.IMServiceRepository,
@@ -47,6 +49,7 @@ func NewServiceService(
 ) IServiceService {
 	return &ServiceService{
 		Repo:          repo,
+		UserRepo:      userRepo,
 		CaretakerRepo: caretakerRepo,
 		DoctorRepo:    doctorRepo,
 		MserviceRepo:  mserviceRepo,
@@ -138,6 +141,10 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	default:
 		return nil, nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
 	}
+
+	if _, err = s.addStaffCommonData(service); err != nil {
+		return nil, nil, err
+	}
 	return service, subService, nil
 }
 
@@ -192,7 +199,7 @@ func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.Updat
 		return nil, fmt.Errorf("service -> UpdateServiceByID: invalid target service type")
 	}
 
-	return result, nil
+	return s.addStaffCommonData(result)
 }
 
 func (s *ServiceService) DeleteServiceByID(serviceID string) (*entities.ServiceModel, error) {
@@ -200,27 +207,67 @@ func (s *ServiceService) DeleteServiceByID(serviceID string) (*entities.ServiceM
 }
 
 func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceModel, error) {
-	return s.Repo.FindByID(serviceID)
+	service, err := s.Repo.FindByID(serviceID)
+	if err != nil {
+		return nil, err
+	}
+	return s.addStaffCommonData(service)
 }
 
 func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.Repo.FindByOwnerID(ownerID, status, month, year, offset, limit)
+	services, err := s.Repo.FindByOwnerID(ownerID, status, month, year, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range services {
+		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, err
+		}
+	}
+	return services, nil
 }
 
 func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.Repo.FindByDoctorID(doctorID, status, month, year, offset, limit)
+	services, err := s.Repo.FindByDoctorID(doctorID, status, month, year, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range services {
+		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, err
+		}
+	}
+	return services, nil
 }
 
 func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.Repo.FindByCaretakerID(caretakerID, status, month, year, offset, limit)
+	services, err := s.Repo.FindByCaretakerID(caretakerID, status, month, year, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range services {
+		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, err
+		}
+	}
+	return services, nil
 }
 
 func (s *ServiceService) FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
 	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.Repo.FindAll(status, month, year, offset, limit)
+	services, err := s.Repo.FindAll(status, month, year, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range services {
+		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, err
+		}
+	}
+	return services, nil
 }
 
 func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) error {
@@ -361,7 +408,6 @@ func (s *ServiceService) GetScoreAndReviewByCaretakerID(caretakerID string) (flo
 				c := trimmed
 				reviews = append(reviews, &entities.SubService{
 					ServiceID: ss.ServiceID,
-					StaffID:   ss.StaffID,
 					Comment:   &c,
 					Score:     ss.Score,
 				})
@@ -405,4 +451,25 @@ func calDefaultLimitAndOffset(page, limit int) (int, int) {
 	}
 	//return offset, limit
 	return (page - 1) * limit, limit
+}
+
+func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {
+	var staffData entities.StaffCommonData
+	var err error
+	user, err := s.UserRepo.FindByID(service.StaffID)
+	if err != nil {
+		return nil, fmt.Errorf("service -> FindServiceByID: %v", err)
+	}
+	staffData = entities.StaffCommonData{
+		ShowID:          user.ShowID,
+		Role:            user.Role,
+		Name:            user.Name,
+		TelephoneNumber: user.TelephoneNumber,
+		Profile:         user.Profile,
+		LicenseNumber:   user.LicenseNumber,
+		Specialization:  user.Specialization,
+		Rating:          user.Rating,
+	}
+	service.Staff = staffData
+	return service, nil
 }
