@@ -49,8 +49,6 @@ func (repo *serviceRepository) Insert(data entities.CreateServiceRequest) (*enti
 
 	result := mapServiceModel(createdService)
 	result.StaffID = data.StaffID
-	result.Disease = data.Disease
-	result.Score = nil
 
 	return result, nil
 }
@@ -275,6 +273,7 @@ func (repo *serviceRepository) UpdateStatus(serviceID, status string) error {
 func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 	result := &entities.ServiceModel{
 		Sid:              model.Sid,
+		ShowId:           model.ShowID,
 		OwnerID:          model.Oid,
 		PetID:            model.Petid,
 		PaymentID:        model.Payid,

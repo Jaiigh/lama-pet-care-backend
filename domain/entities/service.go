@@ -7,6 +7,7 @@ import (
 
 type ServiceModel struct {
 	Sid              string           `json:"service_id"`
+	ShowId           int              `json:"show_id"`
 	OwnerID          string           `json:"owner_id"`
 	PetID            string           `json:"pet_id"`
 	PaymentID        string           `json:"payment_id"`
@@ -24,7 +25,7 @@ type ServiceModel struct {
 type CreateServiceRequest struct {
 	OwnerID          string    `json:"owner_id,omitempty" validate:"omitempty,uuid4"`
 	PetID            string    `json:"pet_id" validate:"required,uuid4"`
-	PaymentID        string    `json:"payment_id,omitempty" validate:"required,uuid4"`
+	PaymentID        string    `json:"payment_id,omitempty"` // for backend
 	StaffID          string    `json:"staff_id" validate:"required,uuid4"`
 	ServiceType      string    `json:"service_type" validate:"required,oneof=mservice cservice"`
 	Status           string    `json:"status" validate:"required,oneof=wait ongoing finish"`
@@ -63,9 +64,4 @@ type SubService struct {
 	Disease   *string `json:"disease,omitempty"`
 	Comment   *string `json:"comment,omitempty"`
 	Score     *int    `json:"score,omitempty"`
-}
-
-type BusyTimeSlot struct {
-	StartDateTime []time.Time `json:"busy_start_date_time_slots"`
-	EndDateTime   []time.Time `json:"busy_end_date_time_slots"`
 }

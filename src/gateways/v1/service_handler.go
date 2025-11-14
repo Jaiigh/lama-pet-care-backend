@@ -14,8 +14,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// @Summary Create caretaker/medical service
-// @Description Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields.
+// @Summary Create caretaker/medical service by stripe payment
+// @Description Owners create their own bookings; admins may create on behalf of an owner by providing owner_id. Use service_type=cservice (caretaker) or mservice (doctor) and supply staff_id plus type-specific fields. this route then create payment and send those to stripe to get payment link.
 // @Tags service
 // @Accept json
 // @Produce json
@@ -28,7 +28,7 @@ import (
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
 // @Router /services [post]
 // @Security BearerAuth
-func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
+func (h *HTTPGateway) CreateServiceStripe(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
 	if err != nil || token.Purpose != "access" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
@@ -82,21 +82,36 @@ func (h *HTTPGateway) CreateService(ctx *fiber.Ctx) error {
 	}
 	req.ReserveDateEnd = req.ReserveDateEnd.Truncate(time.Hour)
 	req.ReserveDateStart = req.ReserveDateStart.Truncate(time.Hour)
-	if !req.ReserveDateEnd.After(req.ReserveDateStart) {
+	if !req.ReserveDateStart.Before(req.ReserveDateEnd) {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "Reservation end date must be after the start date (hour-based)."})
 	}
 
-	service, err := h.ServiceService.CreateService(req)
+	payment, err := h.PaymentService.InsertPayment(req.OwnerID, req.ReserveDateEnd, req.ReserveDateStart)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{
-			Message: "cannot create service: " + err.Error(),
+			Message: "cannot create payment: " + err.Error(),
 		})
+	}
+	req.PaymentID = payment.PayID
+
+	if err := h.ServiceService.ValidateServiceCreation(req, "unpaid"); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
+			Message: err.Error(),
+		})
+	}
+
+	stripe_link, err := h.PaymentService.StripeCreatePrice(&req, payment.Price)
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseModel{Message: "Error to get link"})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(entities.ResponseModel{
 		Message: "service created",
-		Data:    service,
-		Status:  fiber.StatusCreated,
+		Data: fiber.Map{
+			"payment_id":  payment.PayID,
+			"stripe_link": stripe_link,
+		},
+		Status: fiber.StatusCreated,
 	})
 }
 

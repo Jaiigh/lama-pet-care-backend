@@ -120,6 +120,7 @@ model Pet {
 }
 
 model Service {
+  show_id          Int      @default(autoincrement()) @unique
   status service_status
   rdate_start  DateTime       @db.Timestamptz(6)
   rdate_end  DateTime       @db.Timestamptz(6)

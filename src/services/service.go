@@ -3,13 +3,13 @@ package services
 import (
 	"fmt"
 	"math"
-	"sort"
 	"strings"
 	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
+	"lama-backend/src/utils"
 )
 
 type ServiceService struct {
@@ -22,7 +22,8 @@ type ServiceService struct {
 }
 
 type IServiceService interface {
-	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error)
+	ValidateServiceCreation(data entities.CreateServiceRequest, payment_status string) error
+	CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, *entities.SubService, error)
 	UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
@@ -32,7 +33,7 @@ type IServiceService interface {
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
-	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error)
+	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (map[string][]string, error)
 	GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error)
 }
 
@@ -54,74 +55,90 @@ func NewServiceService(
 	}
 }
 
-func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, error) {
+func (s *ServiceService) ValidateServiceCreation(data entities.CreateServiceRequest, payment_status string) error {
+	// status exist
 	status := db.ServiceStatus(data.Status)
 	validStatuses := map[db.ServiceStatus]bool{
 		db.ServiceStatusWait:    true,
 		db.ServiceStatusOngoing: true,
 		db.ServiceStatusFinish:  true,
 	}
-
 	if !validStatuses[status] {
-		return nil, fmt.Errorf("service -> CreateService: invalid status %q", data.Status)
+		return fmt.Errorf("service -> CreateServiceStripe: invalid status %q", data.Status)
 	}
 
-	var result *entities.ServiceModel
+	// staff exist
 	switch data.ServiceType {
 	case "cservice":
-		// find caretaker
 		if _, err := s.CaretakerRepo.FindByID(data.StaffID); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: caretaker not found: %w", err)
-		}
-
-		// find payment
-		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
-		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
-		}
-		if payment.OwnerID != data.OwnerID {
-			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
-		}
-		if payment.Status != db.PaymentStatusPaid {
-			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
-		}
-
-		// insert service
-		if result, err = s.Repo.Insert(data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
-		}
-
-		// insert subservice
-		if _, err = s.CserviceRepo.Insert(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
+			return fmt.Errorf("service -> CreateServiceStripe: caretaker not found: %w", err)
 		}
 	case "mservice":
 		if _, err := s.DoctorRepo.FindByID(data.StaffID); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: doctor not found: %w", err)
-		}
-
-		payment, err := s.PaymentRepo.FindByID(data.PaymentID)
-		if err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to receive payment: %w", err)
-		}
-		if payment.OwnerID != data.OwnerID {
-			return nil, fmt.Errorf("service -> CreateService: service owner and payment owner have to be same person")
-		}
-		if payment.Status != db.PaymentStatusPaid {
-			return nil, fmt.Errorf("service -> CreateService: payment must be Paid before create service")
-		}
-
-		if result, err = s.Repo.Insert(data); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
-		}
-
-		if _, err = s.MserviceRepo.Insert(*mapToSubService(*result)); err != nil {
-			return nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
+			return fmt.Errorf("service -> CreateServiceStripe: doctor not found: %w", err)
 		}
 	default:
-		return nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
+		return fmt.Errorf("service -> CreateServiceStripe: invalid service_type %q", data.ServiceType)
 	}
-	return result, nil
+
+	// payment exist
+	payment, err := s.PaymentRepo.FindByID(data.PaymentID)
+	if err != nil {
+		return fmt.Errorf("service -> CreateServiceStripe: failed to receive payment: %w", err)
+	}
+	if payment.OwnerID != data.OwnerID {
+		return fmt.Errorf("service -> CreateServiceStripe: service owner and payment owner have to be same person")
+	}
+
+	// payment status correct
+	switch payment_status {
+	case "unpaid":
+		if payment.Status != db.PaymentStatusUnpaid {
+			return fmt.Errorf("service -> CreateServiceStripe: payment must be UnPaid before pay")
+		}
+	case "paid":
+		if payment.Status != db.PaymentStatusPaid {
+			return fmt.Errorf("service -> CreateServiceStripe: payment must be Paid before create service")
+		}
+	default:
+		return fmt.Errorf("service -> CreateServiceStripe: invalid payment status %q", payment_status)
+	}
+
+	return nil
+}
+
+func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*entities.ServiceModel, *entities.SubService, error) {
+	if err := s.ValidateServiceCreation(data, "paid"); err != nil {
+		return nil, nil, err
+	}
+
+	var service *entities.ServiceModel
+	var subService *entities.SubService
+	var err error
+	switch data.ServiceType {
+	case "cservice":
+		// insert service
+		if service, err = s.Repo.Insert(data); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+		}
+
+		// insert subservice
+		if subService, err = s.CserviceRepo.Insert(*mapToSubService(*service)); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create cservice: %w", err)
+		}
+	case "mservice":
+		if service, err = s.Repo.Insert(data); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
+		}
+
+		service.Disease = data.Disease
+		if subService, err = s.MserviceRepo.Insert(*mapToSubService(*service)); err != nil {
+			return nil, nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
+		}
+	default:
+		return nil, nil, fmt.Errorf("service -> CreateService: invalid service_type %q", data.ServiceType)
+	}
+	return service, subService, nil
 }
 
 func (s *ServiceService) UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error) {
@@ -255,55 +272,72 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, startDate, endDa
 	return staff, nil
 }
 
-func (s *ServiceService) FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error) {
+func (s *ServiceService) FindBusyTimeSlot(
+	serviceType string,
+	staffID string,
+	startDate00, startDate23, endDate00, endDate23 time.Time,
+) (map[string][]string, error) {
 	var services *[]db.ServiceModel
 	var err error
 	switch serviceType {
 	case "cservice":
 		services, err = s.CaretakerRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
-		if err != nil {
-			return nil, err
-		}
 	case "mservice":
 		services, err = s.DoctorRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
-		if err != nil {
-			return nil, err
-		}
 	default:
 		return nil, nil
 	}
 
-	// Deduplicate and store
-	startSet := make(map[time.Time]struct{})
-	endSet := make(map[time.Time]struct{})
+	if err != nil {
+		return nil, err
+	}
+
+	workingStart := 8
+	workingEnd := 17
+
+	result := make(map[string][]string)
 
 	for _, svc := range *services {
-		// only include if the date part of start or end matches as you described
-		if sameDay(svc.RdateStart, endDate00) {
-			startSet[svc.RdateStart] = struct{}{}
+		svcStart := svc.RdateStart
+		svcEnd := svc.RdateEnd
+
+		// clip service time within request date range
+		busyStart := utils.MaxTime(svcStart, startDate00)
+		busyEnd := utils.MinTime(svcEnd, endDate23)
+
+		if !busyStart.Before(busyEnd) {
+			continue // no overlap
 		}
-		if sameDay(svc.RdateEnd, startDate00) {
-			endSet[svc.RdateEnd] = struct{}{}
+
+		// iterate each day ONLY within request range
+		for day := busyStart; day.Before(busyEnd); day = day.Add(24 * time.Hour) {
+
+			dateKey := day.Format("2006-01-02")
+
+			// skip days that are outside request range
+			if day.Before(startDate00) || day.After(endDate23) {
+				continue
+			}
+
+			// working hour limits
+			dayStart := time.Date(day.Year(), day.Month(), day.Day(), workingStart, 0, 0, 0, day.Location())
+			dayEnd := time.Date(day.Year(), day.Month(), day.Day(), workingEnd, 0, 0, 0, day.Location())
+
+			realStart := utils.MaxTime(busyStart, dayStart)
+			realEnd := utils.MinTime(busyEnd, dayEnd)
+
+			if !realStart.Before(realEnd) {
+				continue
+			}
+
+			// add hourly busy slots
+			for t := realStart; t.Before(realEnd); t = t.Add(time.Hour) {
+				result[dateKey] = append(result[dateKey], fmt.Sprintf("%02d:00", t.Hour()))
+			}
 		}
 	}
 
-	// Convert sets to sorted slices
-	startTimes := make([]time.Time, 0, len(startSet))
-	endTimes := make([]time.Time, 0, len(endSet))
-	for t := range startSet {
-		startTimes = append(startTimes, t)
-	}
-	for t := range endSet {
-		endTimes = append(endTimes, t)
-	}
-
-	sort.Slice(startTimes, func(i, j int) bool { return startTimes[i].Before(startTimes[j]) })
-	sort.Slice(endTimes, func(i, j int) bool { return endTimes[i].Before(endTimes[j]) })
-
-	return &entities.BusyTimeSlot{
-		StartDateTime: startTimes,
-		EndDateTime:   endTimes,
-	}, nil
+	return result, nil
 }
 
 func (s *ServiceService) GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error) {
