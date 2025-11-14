@@ -25,7 +25,7 @@ go run github.com/steebchen/prisma-client-go generate --schema=./domain/prisma/s
 go mod tidy
 ```
 ## Swagger
-swagger url: https://lama-pet-care-backend-dev.onrender.com/swagger/index.html
+swagger url: https://lama-pet-care-backend-domain/swagger/index.html
 
 update swagger
 ```
