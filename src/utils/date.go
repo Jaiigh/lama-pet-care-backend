@@ -22,3 +22,17 @@ func GetRDateRange(startDateStr, endDateStr string) (time.Time, time.Time, error
 	endDate = endDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second).UTC()
 	return startDate, endDate, nil
 }
+
+func MaxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func MinTime(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
+}

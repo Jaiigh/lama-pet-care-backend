@@ -3,13 +3,13 @@ package services
 import (
 	"fmt"
 	"math"
-	"sort"
 	"strings"
 	"time"
 
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
+	"lama-backend/src/utils"
 )
 
 type ServiceService struct {
@@ -33,7 +33,7 @@ type IServiceService interface {
 	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
-	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error)
+	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (map[string][]string, error)
 	GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error)
 }
 
@@ -272,55 +272,72 @@ func (s *ServiceService) FindAvailableStaff(serviceType string, startDate, endDa
 	return staff, nil
 }
 
-func (s *ServiceService) FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (*entities.BusyTimeSlot, error) {
+func (s *ServiceService) FindBusyTimeSlot(
+	serviceType string,
+	staffID string,
+	startDate00, startDate23, endDate00, endDate23 time.Time,
+) (map[string][]string, error) {
 	var services *[]db.ServiceModel
 	var err error
 	switch serviceType {
 	case "cservice":
 		services, err = s.CaretakerRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
-		if err != nil {
-			return nil, err
-		}
 	case "mservice":
 		services, err = s.DoctorRepo.FindBusyTimeSlot(staffID, startDate00, startDate23, endDate00, endDate23)
-		if err != nil {
-			return nil, err
-		}
 	default:
 		return nil, nil
 	}
 
-	// Deduplicate and store
-	startSet := make(map[time.Time]struct{})
-	endSet := make(map[time.Time]struct{})
+	if err != nil {
+		return nil, err
+	}
+
+	workingStart := 8
+	workingEnd := 17
+
+	result := make(map[string][]string)
 
 	for _, svc := range *services {
-		// only include if the date part of start or end matches as you described
-		if sameDay(svc.RdateStart, endDate00) {
-			startSet[svc.RdateStart] = struct{}{}
+		svcStart := svc.RdateStart
+		svcEnd := svc.RdateEnd
+
+		// clip service time within request date range
+		busyStart := utils.MaxTime(svcStart, startDate00)
+		busyEnd := utils.MinTime(svcEnd, endDate23)
+
+		if !busyStart.Before(busyEnd) {
+			continue // no overlap
 		}
-		if sameDay(svc.RdateEnd, startDate00) {
-			endSet[svc.RdateEnd] = struct{}{}
+
+		// iterate each day ONLY within request range
+		for day := busyStart; day.Before(busyEnd); day = day.Add(24 * time.Hour) {
+
+			dateKey := day.Format("2006-01-02")
+
+			// skip days that are outside request range
+			if day.Before(startDate00) || day.After(endDate23) {
+				continue
+			}
+
+			// working hour limits
+			dayStart := time.Date(day.Year(), day.Month(), day.Day(), workingStart, 0, 0, 0, day.Location())
+			dayEnd := time.Date(day.Year(), day.Month(), day.Day(), workingEnd, 0, 0, 0, day.Location())
+
+			realStart := utils.MaxTime(busyStart, dayStart)
+			realEnd := utils.MinTime(busyEnd, dayEnd)
+
+			if !realStart.Before(realEnd) {
+				continue
+			}
+
+			// add hourly busy slots
+			for t := realStart; t.Before(realEnd); t = t.Add(time.Hour) {
+				result[dateKey] = append(result[dateKey], fmt.Sprintf("%02d:00", t.Hour()))
+			}
 		}
 	}
 
-	// Convert sets to sorted slices
-	startTimes := make([]time.Time, 0, len(startSet))
-	endTimes := make([]time.Time, 0, len(endSet))
-	for t := range startSet {
-		startTimes = append(startTimes, t)
-	}
-	for t := range endSet {
-		endTimes = append(endTimes, t)
-	}
-
-	sort.Slice(startTimes, func(i, j int) bool { return startTimes[i].Before(startTimes[j]) })
-	sort.Slice(endTimes, func(i, j int) bool { return endTimes[i].Before(endTimes[j]) })
-
-	return &entities.BusyTimeSlot{
-		StartDateTime: startTimes,
-		EndDateTime:   endTimes,
-	}, nil
+	return result, nil
 }
 
 func (s *ServiceService) GetScoreAndReviewByCaretakerID(caretakerID string) (float64, []*entities.SubService, error) {

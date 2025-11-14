@@ -64,8 +64,3 @@ type SubService struct {
 	Comment   *string `json:"comment,omitempty"`
 	Score     *int    `json:"score,omitempty"`
 }
-
-type BusyTimeSlot struct {
-	StartDateTime []time.Time `json:"busy_start_date_time_slots"`
-	EndDateTime   []time.Time `json:"busy_end_date_time_slots"`
-}
