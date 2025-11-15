@@ -35,12 +35,13 @@ func (h *HTTPGateway) GetMyPayment(ctx *fiber.Ctx) error {
 	page := ctx.QueryInt("page", 1)
 	limit := ctx.QueryInt("limit", 5)
 	var payments []*entities.PaymentModel
+	var total int
 
 	switch token.Role {
 	case "admin":
-		payments, err = h.PaymentService.FindAllPayments(month, year, page, limit)
+		payments, total, err = h.PaymentService.FindAllPayments(month, year, page, limit)
 	case "owner":
-		payments, err = h.PaymentService.FindPaymentsByOwnerID(token.UserID, month, year, page, limit)
+		payments, total, err = h.PaymentService.FindPaymentsByOwnerID(token.UserID, month, year, page, limit)
 
 	default:
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token. have to be admin or owner"})
@@ -52,7 +53,7 @@ func (h *HTTPGateway) GetMyPayment(ctx *fiber.Ctx) error {
 		Message: "success",
 		Data: fiber.Map{
 			"page":     page,
-			"amount":   len(payments),
+			"amount":   total,
 			"payments": payments,
 		},
 		Status: fiber.StatusOK,

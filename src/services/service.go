@@ -28,10 +28,10 @@ type IServiceService interface {
 	UpdateServiceByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
 	DeleteServiceByID(serviceID string) (*entities.ServiceModel, error)
 	FindServiceByID(serviceID string) (*entities.ServiceModel, error)
-	FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
-	FindServicesByDoctorID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
-	FindServicesByCaretakerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
-	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error)
+	FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error)
+	FindServicesByDoctorID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error)
+	FindServicesByCaretakerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error)
+	FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error)
 	UpdateStatus(serviceID, status, role, userID string) error
 	FindAvailableStaff(serviceType string, startDate, endDate time.Time) ([]*entities.AvailableStaffResponse, error)
 	FindBusyTimeSlot(serviceType string, staffID string, startDate00, startDate23, endDate00, endDate23 time.Time) (map[string][]string, error)
@@ -214,60 +214,72 @@ func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceMod
 	return s.addStaffCommonData(service)
 }
 
-func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	services, err := s.Repo.FindByOwnerID(ownerID, status, month, year, offset, limit)
+func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
+	services, err := s.Repo.FindByOwnerID(ownerID, status, month, year)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	for _, service := range services {
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginated, total := servicePaginate(services, offset, end)
+
+	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
-	return services, nil
+	return paginated, total, nil
 }
 
-func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	services, err := s.Repo.FindByDoctorID(doctorID, status, month, year, offset, limit)
+func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
+	services, err := s.Repo.FindByDoctorID(doctorID, status, month, year)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	for _, service := range services {
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginated, total := servicePaginate(services, offset, end)
+
+	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
-	return services, nil
+	return paginated, total, nil
 }
 
-func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	services, err := s.Repo.FindByCaretakerID(caretakerID, status, month, year, offset, limit)
+func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
+	services, err := s.Repo.FindByCaretakerID(caretakerID, status, month, year)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	for _, service := range services {
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginated, total := servicePaginate(services, offset, end)
+
+	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
-	return services, nil
+	return paginated, total, nil
 }
 
-func (s *ServiceService) FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	services, err := s.Repo.FindAll(status, month, year, offset, limit)
+func (s *ServiceService) FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
+	services, err := s.Repo.FindAll(status, month, year)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	for _, service := range services {
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginated, total := servicePaginate(services, offset, end)
+
+	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
-	return services, nil
+	return paginated, total, nil
 }
 
 func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) error {
@@ -442,15 +454,16 @@ func mapToSubService(service entities.ServiceModel) *entities.SubService {
 	return result
 }
 
-func calDefaultLimitAndOffset(page, limit int) (int, int) {
-	if page < 1 {
-		page = 1
+func servicePaginate(services []*entities.ServiceModel, offset, end int) ([]*entities.ServiceModel, int) {
+	total := len(services)
+	if offset >= total {
+		return []*entities.ServiceModel{}, 0
 	}
-	if limit < 1 {
-		limit = 5
+	if end > total {
+		end = total
 	}
-	//return offset, limit
-	return (page - 1) * limit, limit
+	paginated := services[offset:end]
+	return paginated, total
 }
 
 func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {

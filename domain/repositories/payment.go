@@ -20,8 +20,8 @@ type IPaymentRepository interface {
 	FindByID(payID string) (*entities.PaymentModel, error)
 	DeleteByID(payID string) (*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error)
-	FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
-	FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error)
+	FindAllPayments(month int, year int) ([]*entities.PaymentModel, error)
+	FindPaymentsByOwnerID(ownerID string, month int, year int) ([]*entities.PaymentModel, error)
 }
 
 func NewPaymentRepository(db *ds.PrismaDB) IPaymentRepository {
@@ -137,7 +137,7 @@ func mapToPaymentModels(models []db.PaymentModel) []*entities.PaymentModel {
 	return payments
 }
 
-func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
+func (repo *paymentRepository) FindAllPayments(month int, year int) ([]*entities.PaymentModel, error) {
 	params := []db.PaymentWhereParam{}
 
 	if year > 0 {
@@ -148,7 +148,7 @@ func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, 
 	}
 	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
 		db.Payment.PayDate.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (repo *paymentRepository) FindAllPayments(month int, year int, offset int, 
 	return mapToPaymentModels(payments), nil
 }
 
-func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int, offset int, limit int) ([]*entities.PaymentModel, error) {
+func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int) ([]*entities.PaymentModel, error) {
 	params := []db.PaymentWhereParam{
 		db.Payment.Oid.Equals(ownerID),
 	}
@@ -170,7 +170,7 @@ func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, 
 
 	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
 		db.Payment.PayDate.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 	if err != nil {
 		return nil, err
 	}

@@ -20,10 +20,10 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
-	FindByOwnerID(ownerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindByDoctorID(doctorID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindByCaretakerID(caretakerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
-	FindAll(status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error)
+	FindByOwnerID(ownerID string, status string, month, year int) ([]*entities.ServiceModel, error)
+	FindByDoctorID(doctorID string, status string, month, year int) ([]*entities.ServiceModel, error)
+	FindByCaretakerID(caretakerID string, status string, month, year int) ([]*entities.ServiceModel, error)
+	FindAll(status string, month, year int) ([]*entities.ServiceModel, error)
 	UpdateStatus(serviceID, status string) error
 }
 
@@ -153,13 +153,12 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, month, year int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
-		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
@@ -167,7 +166,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
@@ -176,7 +175,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 	return filterUniqueDays(services, month, year)
 }
 
-func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Mservice.Where(
 			db.Mservice.Did.Equals(doctorID),
@@ -184,7 +183,6 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
-		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
@@ -192,7 +190,7 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
@@ -201,7 +199,7 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 	return filterUniqueDays(services, month, year)
 }
 
-func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Cservice.Where(
 			db.Cservice.Cid.Equals(caretakerID),
@@ -209,7 +207,6 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
-		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
 	services, err := repo.Collection.Service.FindMany(params...).With(
@@ -217,7 +214,7 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 
 	if err != nil {
 		return nil, err
@@ -226,12 +223,11 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	return filterUniqueDays(services, month, year)
 }
 
-func (repo *serviceRepository) FindAll(status string, month, year, offset int, limit int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindAll(status string, month, year int) ([]*entities.ServiceModel, error) {
 	params := []db.ServiceWhereParam{}
 
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
-		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
 
@@ -240,7 +236,7 @@ func (repo *serviceRepository) FindAll(status string, month, year, offset int, l
 		db.Service.Mservice.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	).Exec(repo.Context)
 	if err != nil {
 		return nil, err
 	}
