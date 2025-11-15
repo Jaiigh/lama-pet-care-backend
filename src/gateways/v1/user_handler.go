@@ -105,8 +105,46 @@ func (h *HTTPGateway) DeleteUserByAdmin(ctx *fiber.Ctx) error {
 	})
 }
 
-// @Summary delete user by id
-// @Description delete user by id and role from JWT token
+// @Summary find user by id (admin)
+// @Description admin fetches user detail by user ID
+// @Tags user
+// @Produce json
+// @Param userID path string true "User ID"
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid user ID"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 404 {object} entities.ResponseMessage "User not found"
+// @Router /admin/users/{userID} [get]
+// @Security BearerAuth
+func (h *HTTPGateway) FindUserByAdmin(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	userID := ctx.Params("userID")
+	if userID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid user ID"})
+	}
+
+	user, err := h.UsersService.FindUsersByID(userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(entities.ResponseMessage{Message: "user not found"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "user found",
+		Data:    user,
+		Status:  fiber.StatusOK,
+	})
+}
+
+// @Summary update user by id
+// @Description update authenticated user's profile data
 // @Tags user
 // @Accept json
 // @Produce json
@@ -138,6 +176,50 @@ func (h *HTTPGateway) UpdateUserByID(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(updatedUser)
+}
+
+// @Summary update user by admin
+// @Description admin update any user by specifying user ID
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param userID path string true "User ID"
+// @Param body body entities.UpdateUserModel true "update user data"
+// @Success 200 {object} entities.UserDataModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid request"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 500 {object} entities.ResponseMessage "Internal Server Error"
+// @Router /admin/users/{userID} [patch]
+// @Security BearerAuth
+func (h *HTTPGateway) UpdateUserByAdmin(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	userID := ctx.Params("userID")
+	if userID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid user ID"})
+	}
+
+	var updateData entities.UpdateUserModel
+	if err := ctx.BodyParser(&updateData); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid request body"})
+	}
+	if err := validator.New().Struct(updateData); err != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
+	}
+
+	updatedUser, err := h.UsersService.UpdateUsersByID(userID, updateData)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(updatedUser)
