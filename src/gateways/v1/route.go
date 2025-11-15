@@ -27,7 +27,9 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 
 	admin := api.Group("/admin", middlewares.SetJWtHeaderHandler())
 	admin.Get("/users", gateway.GetAllUsers)
+	admin.Get("/users/:userID", gateway.FindUserByAdmin)
 	admin.Delete("/users/:userID", gateway.DeleteUserByAdmin)
+	admin.Patch("/users/:userID", gateway.UpdateUserByAdmin)
 
 	services := api.Group("/services", middlewares.SetJWtHeaderHandler())
 	services.Post("/", gateway.CreateServiceStripe)
