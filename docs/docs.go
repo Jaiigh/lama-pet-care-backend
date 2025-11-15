@@ -1210,7 +1210,7 @@ const docTemplate = `{
                 "tags": [
                     "service"
                 ],
-                "summary": "Create caretaker/medical service by stripe payment",
+                "summary": "Get stripe payment link to Create caretaker/medical service",
                 "parameters": [
                     {
                         "description": "service payload (admins must include owner_id; mservice requires disease)",
