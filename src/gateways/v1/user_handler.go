@@ -67,6 +67,44 @@ func (h *HTTPGateway) DeleteUserByID(ctx *fiber.Ctx) error {
 	})
 }
 
+// @Summary delete user by admin
+// @Description admin delete user by specifying user ID
+// @Tags user
+// @Produce json
+// @Param userID path string true "User ID"
+// @Success 200 {object} entities.ResponseModel "Request successful"
+// @Failure 400 {object} entities.ResponseMessage "Invalid user ID"
+// @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
+// @Failure 403 {object} entities.ResponseMessage "Invalid role"
+// @Failure 500 {object} entities.ResponseMessage "Internal Server Error"
+// @Router /admin/users/{userID} [delete]
+// @Security BearerAuth
+func (h *HTTPGateway) DeleteUserByAdmin(ctx *fiber.Ctx) error {
+	token, err := middlewares.DecodeJWTToken(ctx)
+	if err != nil || token.Purpose != "access" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
+	}
+	if token.Role != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
+	}
+
+	userID := ctx.Params("userID")
+	if userID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid user ID"})
+	}
+
+	deletedUser, err := h.UsersService.DeleteUsersByID(userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(entities.ResponseModel{
+		Message: "user deleted successfully",
+		Data:    deletedUser,
+		Status:  fiber.StatusOK,
+	})
+}
+
 // @Summary delete user by id
 // @Description delete user by id and role from JWT token
 // @Tags user
