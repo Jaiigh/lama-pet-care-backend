@@ -297,16 +297,17 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 	page := ctx.QueryInt("page", 1)
 	limit := ctx.QueryInt("limit", 5)
 	var services []*entities.ServiceModel
+	var total int
 
 	switch token.Role {
 	case "admin":
-		services, err = h.ServiceService.FindAllServices(statusFilter, month, year, page, limit)
+		services, total, err = h.ServiceService.FindAllServices(statusFilter, month, year, page, limit)
 	case "owner":
-		services, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, month, year, page, limit)
+		services, total, err = h.ServiceService.FindServicesByOwnerID(token.UserID, statusFilter, month, year, page, limit)
 	case "doctor":
-		services, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, month, year, page, limit)
+		services, total, err = h.ServiceService.FindServicesByDoctorID(token.UserID, statusFilter, month, year, page, limit)
 	case "caretaker":
-		services, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, month, year, page, limit)
+		services, total, err = h.ServiceService.FindServicesByCaretakerID(token.UserID, statusFilter, month, year, page, limit)
 	}
 
 	if err != nil {
@@ -316,7 +317,7 @@ func (h *HTTPGateway) GetMyServices(ctx *fiber.Ctx) error {
 		Message: "success",
 		Data: fiber.Map{
 			"page":     page,
-			"amount":   len(services),
+			"amount":   total,
 			"services": services,
 		},
 		Status: fiber.StatusOK,

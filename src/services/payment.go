@@ -5,6 +5,7 @@ import (
 	"lama-backend/domain/entities"
 	"lama-backend/domain/prisma/db"
 	"lama-backend/domain/repositories"
+	"lama-backend/src/utils"
 	"os"
 	"strings"
 	"time"
@@ -20,8 +21,8 @@ type PaymentService struct {
 
 type IPaymentService interface {
 	InsertPayment(userID string, reserve_date_end, reserve_date_start time.Time) (*entities.PaymentModel, error)
-	FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
-	FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, error)
+	FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error)
+	FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error)
 	UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error)
 	StripeCreatePrice(service *entities.CreateServiceRequest, price int) (string, error)
 	GetMethodAndPaydate(payIntent string) (string, string, error)
@@ -43,14 +44,26 @@ func (s *PaymentService) InsertPayment(userID string, reserve_date_end, reserve_
 	return s.repo.InsertPayment(userID, price)
 }
 
-func (s *PaymentService) FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.repo.FindAllPayments(month, year, offset, limit)
+func (s *PaymentService) FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error) {
+	payment, err := s.repo.FindAllPayments(month, year)
+	if err != nil {
+		return nil, 0, fmt.Errorf("payment service -> FindPaymentsByOwnerID: %v", err)
+	}
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginate, total := paymentPaginate(payment, offset, end)
+	return paginate, total, nil
 }
 
-func (s *PaymentService) FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, error) {
-	offset, limit := calDefaultLimitAndOffset(page, limit)
-	return s.repo.FindPaymentsByOwnerID(ownerID, month, year, offset, limit)
+func (s *PaymentService) FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error) {
+	payment, err := s.repo.FindPaymentsByOwnerID(ownerID, month, year)
+	if err != nil {
+		return nil, 0, fmt.Errorf("payment service -> FindPaymentsByOwnerID: %v", err)
+	}
+
+	offset, end := utils.CalDefaultOffsetEnd(page, limit)
+	paginate, total := paymentPaginate(payment, offset, end)
+	return paginate, total, nil
 }
 
 func (s *PaymentService) UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error) {
@@ -155,4 +168,16 @@ func (s *PaymentService) GetMethodAndPaydate(payIntent string) (string, string, 
 	payDate := time.Unix(pi.Created, 0).Format(time.RFC3339)
 
 	return pi.PaymentMethodTypes[0], payDate, nil
+}
+
+func paymentPaginate(services []*entities.PaymentModel, offset, end int) ([]*entities.PaymentModel, int) {
+	total := len(services)
+	if offset >= total {
+		return []*entities.PaymentModel{}, 0
+	}
+	if end > total {
+		end = total
+	}
+	paginated := services[offset:end]
+	return paginated, total
 }
