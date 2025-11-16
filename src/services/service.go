@@ -134,7 +134,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 			return nil, nil, fmt.Errorf("service -> CreateService: failed to create service: %w", err)
 		}
 
-		service.Disease = data.Disease
 		if subService, err = s.MserviceRepo.Insert(*mapToSubService(*service)); err != nil {
 			return nil, nil, fmt.Errorf("service -> CreateService: failed to create mservice: %w", err)
 		}

@@ -32,7 +32,6 @@ func NewMServiceRepository(db *ds.PrismaDB) IMServiceRepository {
 
 func (repo *mserviceRepository) Insert(data entities.SubService) (*entities.SubService, error) {
 	createdMService, err := repo.Collection.Mservice.CreateOne(
-		db.Mservice.Disease.Set(*data.Disease),
 		db.Mservice.Service.Link(db.Service.Sid.Equals(data.ServiceID)),
 		db.Mservice.Doctor.Link(db.Doctor.UserID.Equals(data.StaffID)),
 	).Exec(repo.Context)
@@ -124,10 +123,10 @@ func (repo *mserviceRepository) FindAll() ([]*entities.SubService, error) {
 
 func mapMserviceToSubService(model *db.MserviceModel) *entities.SubService {
 	doctorID, _ := model.Did()
-
+	disease, _ := model.Disease()
 	return &entities.SubService{
 		ServiceID: model.Sid,
 		StaffID:   doctorID,
-		Disease:   &model.Disease,
+		Disease:   &disease,
 	}
 }

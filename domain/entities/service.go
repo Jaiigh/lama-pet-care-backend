@@ -24,7 +24,7 @@ type ServiceModel struct {
 }
 
 type CreateServiceRequest struct {
-	OwnerID          string    `json:"owner_id,omitempty" validate:"omitempty,uuid4"`
+	OwnerID          string    `json:"owner_id,omitempty" validate:"omitempty,uuid4"` // for admin
 	PetID            string    `json:"pet_id" validate:"required,uuid4"`
 	PaymentID        string    `json:"payment_id,omitempty"` // for backend
 	StaffID          string    `json:"staff_id" validate:"required,uuid4"`
@@ -32,7 +32,6 @@ type CreateServiceRequest struct {
 	Status           string    `json:"status" validate:"required,oneof=wait ongoing finish"`
 	ReserveDateStart time.Time `json:"reserve_date_start" validate:"required"`
 	ReserveDateEnd   time.Time `json:"reserve_date_end" validate:"required"`
-	Disease          *string   `json:"disease,omitempty" validate:"omitempty,min=1"`
 }
 
 type UpdateServiceRequest struct {
