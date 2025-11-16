@@ -291,7 +291,8 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 		if did, ok := mservice.Did(); ok {
 			result.StaffID = string(did)
 		}
-		result.Disease = &mservice.Disease
+		disease, _ := mservice.Disease()
+		result.Disease = &disease
 	}
 
 	return result

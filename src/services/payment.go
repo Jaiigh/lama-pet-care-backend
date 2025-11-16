@@ -124,11 +124,6 @@ func (s *PaymentService) StripeCreatePrice(service *entities.CreateServiceReques
 		"reserve_date_end":   service.ReserveDateEnd.Format(time.RFC3339),
 	}
 
-	// Optional disease
-	if service.Disease != nil {
-		metaData["disease"] = *service.Disease
-	}
-
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice(paymentMethod),
 

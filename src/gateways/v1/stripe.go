@@ -81,10 +81,6 @@ func (h *HTTPGateway) StripeWebhookService(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("invalid reserve_date_end: %w", err)
 	}
-	disease := ""
-	if val, ok := metadata["disease"]; ok {
-		disease = val.(string)
-	}
 	createService := entities.CreateServiceRequest{
 		OwnerID:          metadata["owner_id"].(string),
 		PetID:            metadata["pet_id"].(string),
@@ -94,7 +90,6 @@ func (h *HTTPGateway) StripeWebhookService(ctx *fiber.Ctx) error {
 		Status:           metadata["status"].(string),
 		ReserveDateStart: start,
 		ReserveDateEnd:   end,
-		Disease:          &disease,
 	}
 
 	service, subservice, err := h.ServiceService.CreateService(createService)

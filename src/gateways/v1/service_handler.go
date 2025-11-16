@@ -59,22 +59,6 @@ func (h *HTTPGateway) CreateServiceStripe(ctx *fiber.Ctx) error {
 		})
 	}
 
-	switch req.ServiceType {
-	case "cservice":
-	case "mservice":
-		if req.Disease == nil || strings.TrimSpace(*req.Disease) == "" {
-			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
-				Message: "disease is required for mservice",
-			})
-		}
-		trimmed := strings.TrimSpace(*req.Disease)
-		req.Disease = &trimmed
-	default:
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
-			Message: "service_type must be mservice or cservice",
-		})
-	}
-
 	if err := validator.New().Struct(req); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{
 			Message: utils.FormatValidationError(err),
