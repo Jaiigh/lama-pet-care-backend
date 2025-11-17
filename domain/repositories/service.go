@@ -176,14 +176,6 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 	}
 	total := sqlResult[0].Count
 
-	// services, err := repo.Collection.Service.FindMany(params...).With(
-	// 	db.Service.Cservice.Fetch(),
-	// 	db.Service.Mservice.Fetch(),
-	// 	db.Service.Pet.Fetch(),
-	// 	db.Service.Payment.Fetch(),
-	// ).OrderBy(
-	// 	db.Service.RdateStart.Order(db.SortOrderAsc),
-	// ).Skip(offset).Take(limit).Exec(repo.Context)
 	services, err := repo.Collection.Service.
 		FindMany(params...).
 		With(
@@ -238,14 +230,23 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 	}
 	total := sqlResult[0].Count
 
-	services, err := repo.Collection.Service.FindMany(params...).With(
-		db.Service.Cservice.Fetch(),
-		db.Service.Mservice.Fetch(),
-		db.Service.Pet.Fetch(),
-		db.Service.Payment.Fetch(),
-	).OrderBy(
-		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	services, err := repo.Collection.Service.
+		FindMany(params...).
+		With(
+			db.Service.Mservice.Fetch().With(
+				db.Mservice.Doctor.Fetch().With(
+					db.Doctor.Users.Fetch(),
+				),
+			),
+			db.Service.Pet.Fetch(),
+			db.Service.Payment.Fetch(),
+		).
+		OrderBy(
+			db.Service.RdateStart.Order(db.SortOrderAsc),
+		).
+		Skip(offset).
+		Take(limit).
+		Exec(repo.Context)
 
 	if err != nil {
 		return nil, 0, err
@@ -278,14 +279,23 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	}
 	total := sqlResult[0].Count
 
-	services, err := repo.Collection.Service.FindMany(params...).With(
-		db.Service.Cservice.Fetch(),
-		db.Service.Mservice.Fetch(),
-		db.Service.Pet.Fetch(),
-		db.Service.Payment.Fetch(),
-	).OrderBy(
-		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	services, err := repo.Collection.Service.
+		FindMany(params...).
+		With(
+			db.Service.Cservice.Fetch().With(
+				db.Cservice.Caretaker.Fetch().With(
+					db.Caretaker.Users.Fetch(),
+				),
+			),
+			db.Service.Pet.Fetch(),
+			db.Service.Payment.Fetch(),
+		).
+		OrderBy(
+			db.Service.RdateStart.Order(db.SortOrderAsc),
+		).
+		Skip(offset).
+		Take(limit).
+		Exec(repo.Context)
 
 	if err != nil {
 		return nil, 0, err
@@ -315,14 +325,29 @@ func (repo *serviceRepository) FindAll(status string, month, year int, offset, l
 	}
 	total := sqlResult[0].Count
 
-	services, err := repo.Collection.Service.FindMany(params...).With(
-		db.Service.Cservice.Fetch(),
-		db.Service.Mservice.Fetch(),
-		db.Service.Pet.Fetch(),
-		db.Service.Payment.Fetch(),
-	).OrderBy(
-		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Skip(offset).Take(limit).Exec(repo.Context)
+	services, err := repo.Collection.Service.
+		FindMany(params...).
+		With(
+			db.Service.Mservice.Fetch().With(
+				db.Mservice.Doctor.Fetch().With(
+					db.Doctor.Users.Fetch(),
+				),
+			),
+			db.Service.Cservice.Fetch().With(
+				db.Cservice.Caretaker.Fetch().With(
+					db.Caretaker.Users.Fetch(),
+				),
+			),
+			db.Service.Pet.Fetch(),
+			db.Service.Payment.Fetch(),
+		).
+		OrderBy(
+			db.Service.RdateStart.Order(db.SortOrderAsc),
+		).
+		Skip(offset).
+		Take(limit).
+		Exec(repo.Context)
+
 	if err != nil {
 		return nil, 0, err
 	}
