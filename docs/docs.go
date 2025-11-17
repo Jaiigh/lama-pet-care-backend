@@ -823,75 +823,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/pets": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "owner can create a pet (only role == \"owner\")",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pet"
-                ],
-                "summary": "create pet",
-                "parameters": [
-                    {
-                        "description": "pet payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.CreatedPetModel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Request successful",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid json body",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "403": {
-                        "description": "Invalid role",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            }
-        },
         "/pets/owner": {
             "get": {
                 "security": [
@@ -971,6 +902,79 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "owner can create a pet (only role == \"owner\"). Admin can also create a pet for a specific owner by providing ` + "`" + `ownerID` + "`" + ` in the path.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pet"
+                ],
+                "summary": "create pet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "owner id (admin only)",
+                        "name": "ownerID",
+                        "in": "path"
+                    },
+                    {
+                        "description": "pet payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreatedPetModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json body or missing ownerID for admin",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
                         }
