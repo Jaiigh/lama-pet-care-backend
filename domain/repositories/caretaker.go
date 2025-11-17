@@ -148,7 +148,7 @@ func (repo *caretakerRepository) FindAvailableCaretaker(startDate, endDate time.
 		),
 		db.Caretaker.Cservice.None(
 			db.Cservice.Service.Where(
-				db.Service.Or(
+				db.Service.And(
 					db.Service.Status.Not("finish"),
 					db.Service.And(
 						db.Service.RdateStart.Lte(endDate),
