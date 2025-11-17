@@ -20,10 +20,10 @@ type IServiceRepository interface {
 	FindByID(serviceID string) (*entities.ServiceModel, error)
 	DeleteByID(serviceID string) (*entities.ServiceModel, error)
 	UpdateByID(serviceID string, data entities.UpdateServiceRequest) (*entities.ServiceModel, error)
-	FindByOwnerID(ownerID string, status string, month, year int) ([]*entities.ServiceModel, error)
-	FindByDoctorID(doctorID string, status string, month, year int) ([]*entities.ServiceModel, error)
-	FindByCaretakerID(caretakerID string, status string, month, year int) ([]*entities.ServiceModel, error)
-	FindAll(status string, month, year int) ([]*entities.ServiceModel, error)
+	FindByOwnerID(ownerID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error)
+	FindByDoctorID(doctorID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error)
+	FindByCaretakerID(caretakerID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error)
+	FindAll(status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error)
 	UpdateStatus(serviceID, status string) error
 }
 
@@ -59,6 +59,8 @@ func (repo *serviceRepository) FindByID(serviceID string) (*entities.ServiceMode
 	).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
+		db.Service.Pet.Fetch(),
+		db.Service.Payment.Fetch(),
 	).Exec(repo.Context)
 	if err != nil {
 		return nil, fmt.Errorf("service -> FindByID: %w", err)
@@ -153,29 +155,67 @@ func (repo *serviceRepository) UpdateByID(serviceID string, data entities.Update
 	return result, nil
 }
 
-func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, month, year int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Oid.Equals(ownerID),
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
+		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
-	services, err := repo.Collection.Service.FindMany(params...).With(
-		db.Service.Cservice.Fetch(),
-		db.Service.Mservice.Fetch(),
-	).OrderBy(
-		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+
+	var sqlResult []entities.CountResult
+	sql, args, err := toSql("owner", ownerID, status, month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
+
+	// services, err := repo.Collection.Service.FindMany(params...).With(
+	// 	db.Service.Cservice.Fetch(),
+	// 	db.Service.Mservice.Fetch(),
+	// 	db.Service.Pet.Fetch(),
+	// 	db.Service.Payment.Fetch(),
+	// ).OrderBy(
+	// 	db.Service.RdateStart.Order(db.SortOrderAsc),
+	// ).Skip(offset).Take(limit).Exec(repo.Context)
+	services, err := repo.Collection.Service.
+		FindMany(params...).
+		With(
+			db.Service.Mservice.Fetch().With(
+				db.Mservice.Doctor.Fetch().With(
+					db.Doctor.Users.Fetch(),
+				),
+			),
+			db.Service.Cservice.Fetch().With(
+				db.Cservice.Caretaker.Fetch().With(
+					db.Caretaker.Users.Fetch(),
+				),
+			),
+			db.Service.Pet.Fetch(),
+			db.Service.Payment.Fetch(),
+		).
+		OrderBy(
+			db.Service.RdateStart.Order(db.SortOrderAsc),
+		).
+		Skip(offset).
+		Take(limit).
+		Exec(repo.Context)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return filterUniqueDays(services, month, year)
+	results, err := filterUniqueDays(services, month, year)
+	return results, total, err
 }
 
-func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Mservice.Where(
 			db.Mservice.Did.Equals(doctorID),
@@ -183,23 +223,39 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
+		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
+
+	var sqlResult []entities.CountResult
+	sql, args, err := toSql("doctor", doctorID, status, month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
+
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
+		db.Service.Pet.Fetch(),
+		db.Service.Payment.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return filterUniqueDays(services, month, year)
+	result, err := filterUniqueDays(services, month, year)
+	return result, total, err
 }
 
-func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error) {
 	params := []db.ServiceWhereParam{
 		db.Service.Cservice.Where(
 			db.Cservice.Cid.Equals(caretakerID),
@@ -207,41 +263,72 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	}
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
+		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
+
+	var sqlResult []entities.CountResult
+	sql, args, err := toSql("caretaker", caretakerID, status, month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
+
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
+		db.Service.Pet.Fetch(),
+		db.Service.Payment.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return filterUniqueDays(services, month, year)
+	result, err := filterUniqueDays(services, month, year)
+	return result, total, err
 }
 
-func (repo *serviceRepository) FindAll(status string, month, year int) ([]*entities.ServiceModel, error) {
+func (repo *serviceRepository) FindAll(status string, month, year int, offset, limit int) ([]*entities.ServiceModel, int, error) {
 	params := []db.ServiceWhereParam{}
 
 	params = addServiceStatusParams(params, status)
 	if month > 0 && year > 0 {
+		limit = 31
 		params = addRDateRangeParams(params, month, year)
 	}
+
+	var sqlResult []entities.CountResult
+	sql, args, err := toSql("all", "", status, month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
 
 	services, err := repo.Collection.Service.FindMany(params...).With(
 		db.Service.Cservice.Fetch(),
 		db.Service.Mservice.Fetch(),
+		db.Service.Pet.Fetch(),
+		db.Service.Payment.Fetch(),
 	).OrderBy(
 		db.Service.RdateStart.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return filterUniqueDays(services, month, year)
+	result, err := filterUniqueDays(services, month, year)
+	return result, total, err
 }
 
 func (repo *serviceRepository) UpdateStatus(serviceID, status string) error {
@@ -281,18 +368,66 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 	if cservice, ok := model.Cservice(); ok {
 		result.ServiceType = "cservice"
 		result.StaffID = cservice.Cid
+		result.Score = &cservice.Score
 
 		if comment, ok := cservice.Comment(); ok {
 			commentStr := string(comment)
 			result.Comment = &commentStr
 		}
+
+		caretaker := cservice.Caretaker()
+		user := caretaker.Users()
+
+		profile, _ := user.ProfileImage()
+		specialization, _ := caretaker.Specialties()
+		rating, _ := caretaker.Rating()
+		result.Staff = entities.StaffCommonData{
+			Role:            user.Role,
+			Name:            user.Name,
+			TelephoneNumber: user.TelephoneNumber,
+			Profile:         profile,
+			Specialization:  specialization,
+			Rating:          rating,
+		}
 	} else if mservice, ok := model.Mservice(); ok {
 		result.ServiceType = "mservice"
-		if did, ok := mservice.Did(); ok {
-			result.StaffID = string(did)
-		}
+		result.StaffID = mservice.Did
 		disease, _ := mservice.Disease()
 		result.Disease = &disease
+
+		doctor := mservice.Doctor()
+		user := doctor.Users()
+
+		profile, _ := user.ProfileImage()
+		result.Staff = entities.StaffCommonData{
+			Role:            user.Role,
+			Name:            user.Name,
+			TelephoneNumber: user.TelephoneNumber,
+			Profile:         profile,
+			LicenseNumber:   doctor.LicenseNumber,
+		}
+	}
+
+	pet := model.Pet()
+	breed, _ := pet.Breed()
+	name, _ := pet.Name()
+	result.Pet = entities.PetCommonModel{
+		Breed:     breed,
+		Name:      name,
+		BirthDate: pet.Birthdate,
+		Weight:    pet.Weight,
+		Kind:      pet.Kind,
+		Sex:       pet.Sex,
+	}
+
+	payment := model.Payment()
+	typeStr, _ := payment.Type()
+	payDate, _ := payment.PayDate()
+	result.Payment = entities.PaymentCommonModel{
+		Status:  payment.Status,
+		Price:   payment.Price,
+		Type:    &typeStr,
+		PayDate: &payDate,
 	}
 
 	return result
@@ -369,4 +504,72 @@ func addRDateRangeParams(params []db.ServiceWhereParam, month, year int) []db.Se
 		),
 	)
 	return params
+}
+
+func toSql(sqltype, userID string, status string, month, year int) (string, []interface{}, error) {
+	whereSQL := ""
+	args := []interface{}{}
+	idx := 1
+
+	switch sqltype {
+	case "owner":
+		whereSQL += fmt.Sprintf(`"OID" = $%d::uuid`, idx)
+		args = append(args, userID)
+		idx++
+	case "doctor":
+		whereSQL += fmt.Sprintf(`
+        EXISTS (
+            SELECT 1 FROM "Cservice"
+            WHERE "Cservice"."SID" = "Service"."SID"
+              AND "Cservice"."CID" = $%d::uuid
+        )
+		`, idx)
+		args = append(args, userID)
+		idx++
+	case "caretaker":
+		whereSQL += fmt.Sprintf(`
+        EXISTS (
+            SELECT 1 FROM "Mservice"
+            WHERE "Mservice"."SID" = "Service"."SID"
+              AND "Mservice"."DID" = $%d::uuid
+        )
+		`, idx)
+		args = append(args, userID)
+		idx++
+	default:
+	}
+
+	if status != "" && status != "all" {
+		whereSQL += fmt.Sprintf("status = $%d", idx)
+		args = append(args, status)
+		idx++
+	}
+
+	if month > 0 && year > 0 {
+		if whereSQL != "" {
+			whereSQL += " AND "
+		}
+		whereSQL += fmt.Sprintf(`
+			(
+				(rdate_start >= $%d AND rdate_start < $%d) OR
+				(rdate_end   >= $%d AND rdate_end   < $%d)
+			)
+		`, idx, idx+1, idx+2, idx+3)
+
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+
+		args = append(args, startDate, endDate, startDate, endDate)
+		idx += 4
+	}
+
+	if whereSQL != "" {
+		whereSQL = "WHERE " + whereSQL
+	}
+
+	sql := fmt.Sprintf(`
+		SELECT CAST(COUNT(*) AS INTEGER) AS count
+		FROM "Service"
+		%s`, whereSQL)
+	return sql, args, nil
 }

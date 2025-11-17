@@ -15,13 +15,14 @@ type ServiceModel struct {
 	ReserveDateStart time.Time        `json:"reserve_date_start"`
 	ReserveDateEnd   time.Time        `json:"reserve_date_end"`
 
-	ServiceType string          `json:"service_type"`
-	StaffID     string          `json:"staff_id"`
-	Staff       StaffCommonData `json:"staff"`
-	Pet         PetDataModel    `json:"pet"`
-	Disease     *string         `json:"disease,omitempty"`
-	Comment     *string         `json:"comment,omitempty"`
-	Score       *int            `json:"score,omitempty"`
+	ServiceType string             `json:"service_type"`
+	StaffID     string             `json:"staff_id"`
+	Staff       StaffCommonData    `json:"staff"`
+	Pet         PetCommonModel     `json:"pet"`
+	Payment     PaymentCommonModel `json:"payment"`
+	Disease     *string            `json:"disease,omitempty"`
+	Comment     *string            `json:"comment,omitempty"`
+	Score       *int               `json:"score,omitempty"`
 }
 
 type CreateServiceRequest struct {

@@ -29,3 +29,10 @@ type CreatePaymentModel struct {
 	ReserveDateStart time.Time `json:"reserve_date_start" validate:"required"`
 	ReserveDateEnd   time.Time `json:"reserve_date_end" validate:"required"`
 }
+
+type PaymentCommonModel struct {
+	Status  db.PaymentStatus `json:"status"`
+	Price   int              `json:"price"`
+	Type    *string          `json:"type"`
+	PayDate *time.Time       `json:"pay_date,omitempty"`
+}

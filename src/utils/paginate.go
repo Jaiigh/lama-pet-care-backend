@@ -8,6 +8,6 @@ func CalDefaultOffsetEnd(page, limit int) (int, int) {
 		limit = 5
 	}
 	offset := (page - 1) * limit
-	//return offset, end
-	return offset, offset + limit
+	//return offset, limit
+	return offset, limit
 }

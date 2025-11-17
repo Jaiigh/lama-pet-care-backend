@@ -28,8 +28,6 @@ type UserDataModel struct {
 }
 
 type StaffCommonData struct {
-	UserID          string     `json:"user_id"`
-	ShowID          int        `json:"show_id"`
 	Role            db.Role    `json:"role"`
 	Name            string     `json:"name"`
 	TelephoneNumber string     `json:"telephone_number"`
