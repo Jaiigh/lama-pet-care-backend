@@ -166,7 +166,7 @@ func (repo *serviceRepository) FindByOwnerID(ownerID string, status string, mont
 	}
 
 	var sqlResult []entities.CountResult
-	sql, args, err := toSql("owner", ownerID, status, month, year)
+	sql, args, err := getSqlService("owner", ownerID, status, month, year)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -220,7 +220,7 @@ func (repo *serviceRepository) FindByDoctorID(doctorID string, status string, mo
 	}
 
 	var sqlResult []entities.CountResult
-	sql, args, err := toSql("doctor", doctorID, status, month, year)
+	sql, args, err := getSqlService("doctor", doctorID, status, month, year)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -269,7 +269,7 @@ func (repo *serviceRepository) FindByCaretakerID(caretakerID string, status stri
 	}
 
 	var sqlResult []entities.CountResult
-	sql, args, err := toSql("caretaker", caretakerID, status, month, year)
+	sql, args, err := getSqlService("caretaker", caretakerID, status, month, year)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -315,7 +315,7 @@ func (repo *serviceRepository) FindAll(status string, month, year int, offset, l
 	}
 
 	var sqlResult []entities.CountResult
-	sql, args, err := toSql("all", "", status, month, year)
+	sql, args, err := getSqlService("all", "", status, month, year)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -531,7 +531,7 @@ func addRDateRangeParams(params []db.ServiceWhereParam, month, year int) []db.Se
 	return params
 }
 
-func toSql(sqltype, userID string, status string, month, year int) (string, []interface{}, error) {
+func getSqlService(sqltype, userID string, status string, month, year int) (string, []interface{}, error) {
 	whereSQL := ""
 	args := []interface{}{}
 	idx := 1

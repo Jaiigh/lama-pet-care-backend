@@ -20,8 +20,8 @@ type IPaymentRepository interface {
 	FindByID(payID string) (*entities.PaymentModel, error)
 	DeleteByID(payID string) (*entities.PaymentModel, error)
 	UpdateByID(paymentID string, data entities.PaymentModel) (*entities.PaymentModel, error)
-	FindAllPayments(month int, year int) ([]*entities.PaymentModel, error)
-	FindPaymentsByOwnerID(ownerID string, month int, year int) ([]*entities.PaymentModel, error)
+	FindAllPayments(month int, year int, offset, limit int) ([]*entities.PaymentModel, int, error)
+	FindPaymentsByOwnerID(ownerID string, month int, year int, offset, limit int) ([]*entities.PaymentModel, int, error)
 }
 
 func NewPaymentRepository(db *ds.PrismaDB) IPaymentRepository {
@@ -137,7 +137,7 @@ func mapToPaymentModels(models []db.PaymentModel) []*entities.PaymentModel {
 	return payments
 }
 
-func (repo *paymentRepository) FindAllPayments(month int, year int) ([]*entities.PaymentModel, error) {
+func (repo *paymentRepository) FindAllPayments(month int, year int, offset, limit int) ([]*entities.PaymentModel, int, error) {
 	params := []db.PaymentWhereParam{}
 
 	if year > 0 {
@@ -146,17 +146,29 @@ func (repo *paymentRepository) FindAllPayments(month int, year int) ([]*entities
 		}
 		params = addPayDateParams(params, month, year)
 	}
+
+	var sqlResult []entities.CountResult
+	sql, args, err := getSqlPayment("all", "", month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
+
 	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
 		db.Payment.PayDate.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return mapToPaymentModels(payments), nil
+	return mapToPaymentModels(payments), total, nil
 }
 
-func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int) ([]*entities.PaymentModel, error) {
+func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, year int, offset, limit int) ([]*entities.PaymentModel, int, error) {
 	params := []db.PaymentWhereParam{
 		db.Payment.Oid.Equals(ownerID),
 	}
@@ -168,14 +180,25 @@ func (repo *paymentRepository) FindPaymentsByOwnerID(ownerID string, month int, 
 		params = addPayDateParams(params, month, year)
 	}
 
+	var sqlResult []entities.CountResult
+	sql, args, err := getSqlPayment("owner", ownerID, month, year)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = repo.Collection.Prisma.QueryRaw(sql, args...).Exec(repo.Context, &sqlResult)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := sqlResult[0].Count
+
 	payments, err := repo.Collection.Payment.FindMany(params...).OrderBy(
 		db.Payment.PayDate.Order(db.SortOrderAsc),
-	).Exec(repo.Context)
+	).Skip(offset).Take(limit).Exec(repo.Context)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return mapToPaymentModels(payments), nil
+	return mapToPaymentModels(payments), total, nil
 }
 
 func addPayDateParams(params []db.PaymentWhereParam, month, year int) []db.PaymentWhereParam {
@@ -187,4 +210,44 @@ func addPayDateParams(params []db.PaymentWhereParam, month, year int) []db.Payme
 	)
 
 	return params
+}
+
+func getSqlPayment(sqltype, userID string, month, year int) (string, []interface{}, error) {
+	whereSQL := ""
+	args := []interface{}{}
+	idx := 1
+
+	switch sqltype {
+	case "owner":
+		whereSQL += fmt.Sprintf(`"OID" = $%d::uuid`, idx)
+		args = append(args, userID)
+		idx++
+	default:
+	}
+
+	if month > 0 && year > 0 {
+		if whereSQL != "" {
+			whereSQL += " AND "
+		}
+		whereSQL += fmt.Sprintf(`
+			(
+				pay_date >= $%d
+			)
+		`, idx)
+
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+
+		args = append(args, startDate)
+		idx++
+	}
+
+	if whereSQL != "" {
+		whereSQL = "WHERE " + whereSQL
+	}
+
+	sql := fmt.Sprintf(`
+		SELECT CAST(COUNT(*) AS INTEGER) AS count
+		FROM "Service"
+		%s`, whereSQL)
+	return sql, args, nil
 }
