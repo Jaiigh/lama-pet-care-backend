@@ -11,18 +11,19 @@ import (
 )
 
 // @Summary create pet
-// @Description owner can create a pet (only role == "owner")
+// @Description owner can create a pet (only role == "owner"). Admin can also create a pet for a specific owner by providing `ownerID` in the path.
 // @Tags pet
 // @Accept json
 // @Produce json
+// @Param ownerID path string false "owner id (admin only)"
 // @Param body body entities.CreatedPetModel true "pet payload"
 // @Success 201 {object} entities.ResponseModel "Request successful"
-// @Failure 400 {object} entities.ResponseMessage "Invalid json body"
+// @Failure 400 {object} entities.ResponseMessage "Invalid json body or missing ownerID for admin"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 422 {object} entities.ResponseMessage "Validation error"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /pets [post]
+// @Router /pets/{ownerID} [post]
 // @Security BearerAuth
 func (h *HTTPGateway) CreatePet(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
@@ -30,8 +31,8 @@ func (h *HTTPGateway) CreatePet(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	// Only owner can create pet (OID FK constraint will be one's own ID)
-	if token.Role != "owner" {
+	// only owner or admin can create pets (admin can create for other owners via path param)
+	if token.Role != "owner" && token.Role != "admin" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
@@ -40,8 +41,19 @@ func (h *HTTPGateway) CreatePet(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid json body"})
 	}
 
-	// Ensure pet is created under the authenticated owner
-	pet.OwnerID = token.UserID
+	// Determine owner ID: owners always create under their own ID; admins must provide ownerID in path
+
+	if token.Role == "owner" {
+		// Ensure pet is created under the authenticated owner regardless of body
+		pet.OwnerID = token.UserID
+	} else {
+		// admin
+		ownerIDParam := ctx.Params("ownerID")
+		if ownerIDParam == "" {
+			return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "ownerID path param required for admin"})
+		}
+		pet.OwnerID = ownerIDParam
+	}
 
 	if err := validator.New().Struct(pet); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(entities.ResponseMessage{Message: utils.FormatValidationError(err)})
