@@ -399,14 +399,25 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 			commentStr := string(comment)
 			result.Comment = &commentStr
 		}
+	} else if mservice, ok := model.Mservice(); ok {
+		result.ServiceType = "mservice"
+		result.StaffID = mservice.Did
+		disease, _ := mservice.Disease()
+		result.Disease = &disease
+	}
 
+	return result
+}
+
+func addServiceAdditionModel(service *entities.ServiceModel, model *db.ServiceModel) *entities.ServiceModel {
+	if cservice, ok := model.Cservice(); ok {
 		caretaker := cservice.Caretaker()
 		user := caretaker.Users()
 
 		profile, _ := user.ProfileImage()
 		specialization, _ := caretaker.Specialties()
 		rating, _ := caretaker.Rating()
-		result.Staff = entities.StaffCommonData{
+		service.Staff = entities.StaffCommonData{
 			Role:            user.Role,
 			Name:            user.Name,
 			TelephoneNumber: user.TelephoneNumber,
@@ -415,16 +426,11 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 			Rating:          rating,
 		}
 	} else if mservice, ok := model.Mservice(); ok {
-		result.ServiceType = "mservice"
-		result.StaffID = mservice.Did
-		disease, _ := mservice.Disease()
-		result.Disease = &disease
-
 		doctor := mservice.Doctor()
 		user := doctor.Users()
 
 		profile, _ := user.ProfileImage()
-		result.Staff = entities.StaffCommonData{
+		service.Staff = entities.StaffCommonData{
 			Role:            user.Role,
 			Name:            user.Name,
 			TelephoneNumber: user.TelephoneNumber,
@@ -436,7 +442,7 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 	pet := model.Pet()
 	breed, _ := pet.Breed()
 	name, _ := pet.Name()
-	result.Pet = entities.PetCommonModel{
+	service.Pet = entities.PetCommonModel{
 		Breed:     breed,
 		Name:      name,
 		BirthDate: pet.Birthdate,
@@ -448,14 +454,14 @@ func mapServiceModel(model *db.ServiceModel) *entities.ServiceModel {
 	payment := model.Payment()
 	typeStr, _ := payment.Type()
 	payDate, _ := payment.PayDate()
-	result.Payment = entities.PaymentCommonModel{
+	service.Payment = entities.PaymentCommonModel{
 		Status:  payment.Status,
 		Price:   payment.Price,
 		Type:    &typeStr,
 		PayDate: &payDate,
 	}
 
-	return result
+	return service
 }
 
 func toServiceStatus(s string) (db.ServiceStatus, bool) {
@@ -473,6 +479,7 @@ func toServiceStatus(s string) (db.ServiceStatus, bool) {
 
 func filterUniqueDays(services []db.ServiceModel, month, year int) ([]*entities.ServiceModel, error) {
 	var result []*entities.ServiceModel
+	var service *entities.ServiceModel
 	var serviceAdded bool
 	if month > 0 && year > 0 {
 		uniqueDays := make(map[int]bool)
@@ -481,7 +488,9 @@ func filterUniqueDays(services []db.ServiceModel, month, year int) ([]*entities.
 			if services[i].RdateStart.Year() == year && services[i].RdateStart.Month() == time.Month(month) {
 				startDay := services[i].RdateStart.Day()
 				if !uniqueDays[startDay] {
-					result = append(result, mapServiceModel(&services[i]))
+					service = mapServiceModel(&services[i])
+					service = addServiceAdditionModel(service, &services[i])
+					result = append(result, service)
 					serviceAdded = true
 					uniqueDays[startDay] = true
 				}
@@ -490,7 +499,9 @@ func filterUniqueDays(services []db.ServiceModel, month, year int) ([]*entities.
 				endDay := services[i].RdateEnd.Day()
 				if !uniqueDays[endDay] {
 					if !serviceAdded {
-						result = append(result, mapServiceModel(&services[i]))
+						service = mapServiceModel(&services[i])
+						service = addServiceAdditionModel(service, &services[i])
+						result = append(result, service)
 					}
 					uniqueDays[endDay] = true
 				}
@@ -498,7 +509,9 @@ func filterUniqueDays(services []db.ServiceModel, month, year int) ([]*entities.
 		}
 	} else {
 		for i := range services {
-			result = append(result, mapServiceModel(&services[i]))
+			service = mapServiceModel(&services[i])
+			service = addServiceAdditionModel(service, &services[i])
+			result = append(result, service)
 		}
 	}
 	return result, nil
