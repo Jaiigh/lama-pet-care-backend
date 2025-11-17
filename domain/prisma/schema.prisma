@@ -76,9 +76,9 @@ model Medicine {
 model Mservice {
   disease String?
   SID     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  DID     String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  DID     String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  Doctor  Doctor? @relation(fields: [DID], references: [user_id], onDelete: Cascade)
+  Doctor  Doctor @relation(fields: [DID], references: [user_id], onDelete: Cascade)
   Service Service @relation(fields: [SID], references: [SID], onDelete: Cascade)
 }
 

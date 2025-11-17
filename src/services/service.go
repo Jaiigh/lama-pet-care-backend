@@ -147,9 +147,6 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	if _, err = s.addStaffCommonData(service); err != nil {
 		return nil, nil, err
 	}
-	if _, err = s.addPetCommonData(service); err != nil {
-		return nil, nil, err
-	}
 	return service, subService, nil
 }
 
@@ -220,83 +217,43 @@ func (s *ServiceService) FindServiceByID(serviceID string) (*entities.ServiceMod
 }
 
 func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
-	services, err := s.Repo.FindByOwnerID(ownerID, status, month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	services, total, err := s.Repo.FindByOwnerID(ownerID, status, month, year, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginated, total := servicePaginate(services, offset, end)
-
-	for _, service := range paginated {
-		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, 0, err
-		}
-		if _, err = s.addPetCommonData(service); err != nil {
-			return nil, 0, err
-		}
-	}
-	return paginated, total, nil
+	return services, total, nil
 }
 
 func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
-	services, err := s.Repo.FindByDoctorID(doctorID, status, month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	services, total, err := s.Repo.FindByDoctorID(doctorID, status, month, year, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginated, total := servicePaginate(services, offset, end)
-
-	for _, service := range paginated {
-		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, 0, err
-		}
-		if _, err = s.addPetCommonData(service); err != nil {
-			return nil, 0, err
-		}
-	}
-	return paginated, total, nil
+	return services, total, nil
 }
 
 func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
-	services, err := s.Repo.FindByCaretakerID(caretakerID, status, month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	services, total, err := s.Repo.FindByCaretakerID(caretakerID, status, month, year, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginated, total := servicePaginate(services, offset, end)
-
-	for _, service := range paginated {
-		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, 0, err
-		}
-		if _, err = s.addPetCommonData(service); err != nil {
-			return nil, 0, err
-		}
-	}
-	return paginated, total, nil
+	return services, total, nil
 }
 
 func (s *ServiceService) FindAllServices(status string, month, year, page int, limit int) ([]*entities.ServiceModel, int, error) {
-	services, err := s.Repo.FindAll(status, month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	services, total, err := s.Repo.FindAll(status, month, year, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginated, total := servicePaginate(services, offset, end)
-
-	for _, service := range paginated {
-		if _, err = s.addStaffCommonData(service); err != nil {
-			return nil, 0, err
-		}
-		if _, err = s.addPetCommonData(service); err != nil {
-			return nil, 0, err
-		}
-	}
-	return paginated, total, nil
+	return services, total, nil
 }
 
 func (s *ServiceService) UpdateStatus(serviceID, status, role, userID string) error {
@@ -453,13 +410,6 @@ func (s *ServiceService) GetScoreAndReviewByCaretakerID(caretakerID string) (flo
 	return avg, reviews, nil
 }
 
-// helper to compare date only (ignore time)
-func sameDay(t1, t2 time.Time) bool {
-	y1, m1, d1 := t1.Date()
-	y2, m2, d2 := t2.Date()
-	return y1 == y2 && m1 == m2 && d1 == d2
-}
-
 func mapToSubService(service entities.ServiceModel) *entities.SubService {
 	result := &entities.SubService{
 		ServiceID: service.Sid,
@@ -471,18 +421,6 @@ func mapToSubService(service entities.ServiceModel) *entities.SubService {
 	return result
 }
 
-func servicePaginate(services []*entities.ServiceModel, offset, end int) ([]*entities.ServiceModel, int) {
-	total := len(services)
-	if offset >= total {
-		return []*entities.ServiceModel{}, 0
-	}
-	if end > total {
-		end = total
-	}
-	paginated := services[offset:end]
-	return paginated, total
-}
-
 func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {
 	var staffData entities.StaffCommonData
 	var err error
@@ -491,7 +429,6 @@ func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*en
 		return nil, fmt.Errorf("service -> FindServiceByID: %v", err)
 	}
 	staffData = entities.StaffCommonData{
-		ShowID:          user.ShowID,
 		Role:            user.Role,
 		Name:            user.Name,
 		TelephoneNumber: user.TelephoneNumber,
@@ -501,14 +438,5 @@ func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*en
 		Rating:          user.Rating,
 	}
 	service.Staff = staffData
-	return service, nil
-}
-
-func (s *ServiceService) addPetCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {
-	pet, err := s.PetRepo.FindPetByID(service.PetID)
-	if err != nil {
-		return nil, fmt.Errorf("service -> addPetCommonData: %w", err)
-	}
-	service.Pet = *pet
 	return service, nil
 }

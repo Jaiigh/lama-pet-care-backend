@@ -45,25 +45,23 @@ func (s *PaymentService) InsertPayment(userID string, reserve_date_end, reserve_
 }
 
 func (s *PaymentService) FindAllPayments(month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error) {
-	payment, err := s.repo.FindAllPayments(month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	payment, total, err := s.repo.FindAllPayments(month, year, offset, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("payment service -> FindPaymentsByOwnerID: %v", err)
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginate, total := paymentPaginate(payment, offset, end)
-	return paginate, total, nil
+	return payment, total, nil
 }
 
 func (s *PaymentService) FindPaymentsByOwnerID(ownerID string, month int, year int, page int, limit int) ([]*entities.PaymentModel, int, error) {
-	payment, err := s.repo.FindPaymentsByOwnerID(ownerID, month, year)
+	offset, limit := utils.CalDefaultOffsetEnd(page, limit)
+	payment, total, err := s.repo.FindPaymentsByOwnerID(ownerID, month, year, offset, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("payment service -> FindPaymentsByOwnerID: %v", err)
 	}
 
-	offset, end := utils.CalDefaultOffsetEnd(page, limit)
-	paginate, total := paymentPaginate(payment, offset, end)
-	return paginate, total, nil
+	return payment, total, nil
 }
 
 func (s *PaymentService) UpdateByID(paymentID string, data entities.UpdatePaymentRequest) (*entities.PaymentModel, error) {
@@ -163,16 +161,4 @@ func (s *PaymentService) GetMethodAndPaydate(payIntent string) (string, string, 
 	payDate := time.Unix(pi.Created, 0).Format(time.RFC3339)
 
 	return pi.PaymentMethodTypes[0], payDate, nil
-}
-
-func paymentPaginate(services []*entities.PaymentModel, offset, end int) ([]*entities.PaymentModel, int) {
-	total := len(services)
-	if offset >= total {
-		return []*entities.PaymentModel{}, 0
-	}
-	if end > total {
-		end = total
-	}
-	paginated := services[offset:end]
-	return paginated, total
 }

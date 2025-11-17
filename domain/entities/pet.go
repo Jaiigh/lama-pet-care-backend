@@ -35,3 +35,12 @@ type UpdatePetModel struct {
 	Sex       *db.PetSex  `json:"sex,omitempty"`
 	OwnerID   *string     `json:"owner_id,omitempty" validate:"omitempty,uuid4"`
 }
+
+type PetCommonModel struct {
+	Breed     string     `json:"breed,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	BirthDate time.Time  `json:"birth_date"`
+	Weight    db.Decimal `json:"weight"`
+	Kind      string     `json:"kind"`
+	Sex       db.PetSex  `json:"sex"`
+}
