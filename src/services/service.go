@@ -505,20 +505,10 @@ func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*en
 }
 
 func (s *ServiceService) addPetCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {
-	var petData entities.PetDataModel
 	pet, err := s.PetRepo.FindPetByID(service.PetID)
 	if err != nil {
 		return nil, fmt.Errorf("service -> addPetCommonData: %w", err)
 	}
-	petData = entities.PetDataModel{
-		PetID:     pet.PetID,
-		OwnerID:   pet.OwnerID,
-		Breed:     pet.Breed,
-		Name:      pet.Name,
-		BirthDate: pet.BirthDate,
-		Weight:    pet.Weight,
-		Kind:      pet.Kind,
-	}
-	service.Pet = petData
+	service.Pet = *pet
 	return service, nil
 }
