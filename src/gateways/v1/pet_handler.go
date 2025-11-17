@@ -110,7 +110,7 @@ func (h *HTTPGateway) FindByOwnerID(ctx *fiber.Ctx) error {
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /pets [get]
+// @Router /pets/{ownerID} [get]
 // @Security BearerAuth
 func (h *HTTPGateway) FindAllPets(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
