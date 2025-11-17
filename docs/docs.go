@@ -830,14 +830,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "admin can fetch all pets",
+                "description": "admin can fetch all pets (provide ownerID in path)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "pet"
                 ],
-                "summary": "get all pets",
+                "summary": "get all pets for specified owner",
                 "responses": {
                     "200": {
                         "description": "Request successful",
@@ -2005,11 +2005,8 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
-                "disease": {
-                    "type": "string",
-                    "minLength": 1
-                },
                 "owner_id": {
+                    "description": "for admin",
                     "type": "string"
                 },
                 "payment_id": {

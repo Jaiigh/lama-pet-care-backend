@@ -49,7 +49,7 @@ func GatewayUsers(gateway HTTPGateway, app *fiber.App) {
 	pets := api.Group("/pets", middlewares.SetJWtHeaderHandler())
 	pets.Post("/", gateway.CreatePet)
 	pets.Get("/owner", gateway.FindByOwnerID)
-	pets.Get("/", gateway.FindAllPets)
+	pets.Get("/:ownerID", gateway.FindAllPets)
 	pets.Patch("/:petID", gateway.UpdatePet)
 	pets.Delete("/:petID", gateway.DeletePet)
 
