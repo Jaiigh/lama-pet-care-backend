@@ -139,8 +139,8 @@ func (repo *doctorRepository) FindAvailableDoctor(startDate, endDate time.Time) 
 		),
 		db.Doctor.Mservice.None(
 			db.Mservice.Service.Where(
-				db.Service.Or(
-					db.Service.Status.Equals("finish"),
+				db.Service.And(
+					db.Service.Status.Not("finish"),
 					db.Service.And(
 						db.Service.RdateStart.Lte(endDate),
 						db.Service.RdateEnd.Gte(startDate),
