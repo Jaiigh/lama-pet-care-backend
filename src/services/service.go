@@ -20,6 +20,7 @@ type ServiceService struct {
 	MserviceRepo  repositories.IMServiceRepository
 	CserviceRepo  repositories.ICServiceRepository
 	PaymentRepo   repositories.IPaymentRepository
+	PetRepo       repositories.IPetRepository
 }
 
 type IServiceService interface {
@@ -46,6 +47,7 @@ func NewServiceService(
 	mserviceRepo repositories.IMServiceRepository,
 	cserviceRepo repositories.ICServiceRepository,
 	paymentRepo repositories.IPaymentRepository,
+	petRepo repositories.IPetRepository,
 ) IServiceService {
 	return &ServiceService{
 		Repo:          repo,
@@ -55,6 +57,7 @@ func NewServiceService(
 		MserviceRepo:  mserviceRepo,
 		CserviceRepo:  cserviceRepo,
 		PaymentRepo:   paymentRepo,
+		PetRepo:       petRepo,
 	}
 }
 
@@ -144,6 +147,9 @@ func (s *ServiceService) CreateService(data entities.CreateServiceRequest) (*ent
 	if _, err = s.addStaffCommonData(service); err != nil {
 		return nil, nil, err
 	}
+	if _, err = s.addPetCommonData(service); err != nil {
+		return nil, nil, err
+	}
 	return service, subService, nil
 }
 
@@ -226,6 +232,9 @@ func (s *ServiceService) FindServicesByOwnerID(ownerID string, status string, mo
 		if _, err = s.addStaffCommonData(service); err != nil {
 			return nil, 0, err
 		}
+		if _, err = s.addPetCommonData(service); err != nil {
+			return nil, 0, err
+		}
 	}
 	return paginated, total, nil
 }
@@ -241,6 +250,9 @@ func (s *ServiceService) FindServicesByDoctorID(doctorID string, status string, 
 
 	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, 0, err
+		}
+		if _, err = s.addPetCommonData(service); err != nil {
 			return nil, 0, err
 		}
 	}
@@ -260,6 +272,9 @@ func (s *ServiceService) FindServicesByCaretakerID(caretakerID string, status st
 		if _, err = s.addStaffCommonData(service); err != nil {
 			return nil, 0, err
 		}
+		if _, err = s.addPetCommonData(service); err != nil {
+			return nil, 0, err
+		}
 	}
 	return paginated, total, nil
 }
@@ -275,6 +290,9 @@ func (s *ServiceService) FindAllServices(status string, month, year, page int, l
 
 	for _, service := range paginated {
 		if _, err = s.addStaffCommonData(service); err != nil {
+			return nil, 0, err
+		}
+		if _, err = s.addPetCommonData(service); err != nil {
 			return nil, 0, err
 		}
 	}
@@ -483,5 +501,14 @@ func (s *ServiceService) addStaffCommonData(service *entities.ServiceModel) (*en
 		Rating:          user.Rating,
 	}
 	service.Staff = staffData
+	return service, nil
+}
+
+func (s *ServiceService) addPetCommonData(service *entities.ServiceModel) (*entities.ServiceModel, error) {
+	pet, err := s.PetRepo.FindPetByID(service.PetID)
+	if err != nil {
+		return nil, fmt.Errorf("service -> addPetCommonData: %w", err)
+	}
+	service.Pet = *pet
 	return service, nil
 }

@@ -1,0 +1,150 @@
+@startuml api_resources
+skinparam handwritten false
+title API Resources
+
+'-- Resources (top) and Representations (bottom) similar to the example attachment --
+class "<<Resource>> Users" as users {
+    GET /admin/users
+    DELETE /admin/users/{userID}
+    GET /user
+    DELETE /user
+    PATCH /user
+    PATCH /user/profile
+}
+
+class "<<Resource>> Auth (login)" as auth_login {
+  POST /auth/admin
+  POST /auth/login/{role}
+  PATCH /auth/password
+  POST /auth/password/email
+  POST /auth/register/{role}
+  GET  /auth/token
+}
+
+class "<<Resource>> Pets" as pets {
+  GET  /pets
+  POST /pets
+  GET  /pets/owner
+  DELETE /pets/{petID}
+  PATCH /pets/{petID}
+}
+
+class "<<Resource>> Services" as services {
+  GET  /services
+  POST /services
+  PATCH /services/review/{serviceID}
+  GET  /services/staff
+  GET  /services/staff/{staffID}/score
+  GET  /services/staff/{staffID}/time
+  DELETE /services/{serviceID}
+  PATCH  /services/{serviceID}
+  PATCH  /services/{serviceID}/{status}
+}
+
+class "<<Resource>> Leaveday" as leaveday {
+  POST /leaveday/{day}
+}
+
+' Consistency checks: Operations are standardized (HTTP VERB /path/template) and attributes are kept out of resources.
+
+class "<<Resource>> Services/Staff" as staff {
+  GET /services/staff
+}
+
+class "<<Resource>> Services/Staff/{staffID}/time" as staff_time {
+  GET /services/staff/{staffID}/time
+}
+
+class "<<Resource>> Payments" as payments {
+  GET /payments?month,year
+  PATCH /payments/{paymentID}
+}
+
+class "<<Resource>> Stripe/service" as stripe_webhook {
+  --
+  POST /stripe/service
+}
+
+class "<<Resource>> Subservice (cservice/mservice)" as subservice {
+  (sub-records linked to Service)
+}
+
+' Representations (Data Models)
+class "<<Representation>> User" as rep_user {
+  - id
+  - name
+  - email
+}
+
+class "<<Representation>> Pet" as rep_pet {
+  - pet_id
+  - owner_id
+  - name
+  - kind
+  - birth_date
+  - weight
+}
+
+class "<<Representation>> Service" as rep_service {
+  - service_id
+  - owner_id
+  - pet_id
+  - payment_id
+  - staff_id
+  - service_type
+  - status
+  - reserve_start
+  - reserve_end
+}
+
+class "<<Representation>> Payment" as rep_payment {
+  - payment_id
+  - owner_id
+  - status
+  - price
+  - type
+  - pay_date
+}
+
+class "<<Representation>> Staff" as rep_staff {
+  - id
+  - name
+  - specialization
+  - rating
+}
+
+class "<<Representation>> Subservice Data" as rep_subservice {
+  - service_id
+  - staff_id
+  - disease?
+  - comment?
+  - score?
+}
+
+' Application -> Resource paths (Connections)
+API ..> users : <<Path>> /users
+API ..> auth_login : <<Path>> /auth
+API ..> pets : <<Path>> /pets
+API ..> services : <<Path>> /services
+API ..> staff : <<Path>> /services/staff
+API ..> staff_time : <<Path>> /services/staff/{staffID}/time
+API ..> payments : <<Path>> /payments
+API ..> stripe_webhook : <<Path>> /stripe/service
+API ..> leaveday : <<Path>> /leaveday
+
+' relationships / flows
+services --> payments : creates (UNPAID) and returns stripe_link
+payments --> stripe_webhook : updated via
+stripe_webhook --> services : create Service (after PAID)
+services --> subservice : creates subrecord
+staff --> staff_time : query busy slots
+
+' Link resources down to representations (dashed dependency arrows)
+users ..> rep_user : <<uses>>
+pets ..> rep_pet : <<uses>>
+services ..> rep_service : <<uses>>
+payments ..> rep_payment : <<uses>>
+staff ..> rep_staff : <<uses>>
+subservice ..> rep_subservice : <<uses>>
+
+@enduml

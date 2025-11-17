@@ -18,6 +18,7 @@ type ServiceModel struct {
 	ServiceType string          `json:"service_type"`
 	StaffID     string          `json:"staff_id"`
 	Staff       StaffCommonData `json:"staff"`
+	Pet         PetDataModel    `json:"pet"`
 	Disease     *string         `json:"disease,omitempty"`
 	Comment     *string         `json:"comment,omitempty"`
 	Score       *int            `json:"score,omitempty"`
