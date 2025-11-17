@@ -64,7 +64,7 @@ func main() {
 	ownerService := sv.NewOwnerService(ownerRepo)
 	doctorService := sv.NewDoctorService(doctorRepo)
 	caretakerService := sv.NewCaretakerService(caretakerRepo)
-	serviceService := sv.NewServiceService(serviceRepo, usersRepo, caretakerRepo, doctorRepo, mserviceRepo, cserviceRepo, paymentRepo)
+	serviceService := sv.NewServiceService(serviceRepo, usersRepo, caretakerRepo, doctorRepo, mserviceRepo, cserviceRepo, paymentRepo, petRepo)
 	leavedayService := sv.NewLeavedayService(leavedayRepo)
 	petService := sv.NewPetService(petRepo)
 	paymentService := sv.NewPaymentService(paymentRepo)

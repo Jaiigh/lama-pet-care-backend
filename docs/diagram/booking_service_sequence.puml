@@ -1,0 +1,82 @@
+@startuml booking_service_sequence
+title Booking Service — simplified flow
+
+actor Owner as Owner
+participant "Frontend\n(Browser/App)" as FE
+participant "HTTP API\n(HTTPGateway)" as API
+participant "ServiceService" as SS
+participant "PaymentService" as PS
+participant "Stripe (Checkout)" as STR
+participant "Database\n(Prisma/DB)" as DB
+
+== Assumption ==
+note over API
+  This diagram shows the simplified user flow per request: on confirm both Service and Payment
+  (and the appropriate subservice) are created before redirecting to Stripe. (Implementation
+  may instead create the service after payment webhook.)
+end note
+
+Owner -> FE: (already-authenticated) Select pet
+FE -> API: GET /pets/owner (optional) -> show pet list
+
+Owner -> FE: Select service type (cservice | mservice)
+FE -> API: GET /services/staff?serviceType=... (show staff list)
+API -> SS: FindAvailableStaff(serviceType, date)
+SS -> DB: query staff availability
+DB --> SS: available staff list
+SS --> API: available staff
+API --> FE: show available staff
+
+Owner -> FE: Select staff
+FE -> API: GET /services/staff/{staffID}/time?startDate=... (JWT)
+API -> SS: FindBusyTimeSlot(serviceType, staffID, date)
+SS -> DB: query busy slots for staff
+DB --> SS: busy time slots
+SS --> API: busy time slots
+API --> FE: show available times
+
+Owner -> FE: Select timeslot and Confirm booking
+FE -> API: POST /services/confirm (payload: pet_id, staff_id, service_type, reserve_start/end)
+
+note right of API
+  On confirm: create Payment with status=UNPAID and return Stripe checkout link to client.
+  After successful Stripe payment (webhook), update Payment to PAID and then create the Service
+  and the appropriate subservice (CService or MService) linked to that payment.
+end note
+
+API -> DB: create Payment (status=UNPAID)
+DB --> API: payment (payment_id, price)
+
+API -> PS: StripeCreatePrice(metadata: payment_id, owner_id, pet_id, staff_id, service_type, reserve_start/end)
+PS -> STR: Create Checkout Session
+STR --> PS: checkout_url
+PS --> API: stripe_link
+API --> FE: 201 Created { payment_id, stripe_link }
+
+FE -> STR: Redirect client to Stripe checkout
+STR -> STR: Customer completes payment
+
+STR -> API: POST /stripe/service (payment_intent succeeded)
+API -> PS: GetMethodAndPaydate(payment_intent)
+PS -> PS: parse method, paydate
+API -> PS: UpdateByID(payment_id, {status:PAID, type, pay_date})
+PS -> DB: update payment status -> PAID
+DB --> PS: updated payment
+
+API -> SS: CreateService(createServiceRequest built from metadata + updatedPayment.PayID)
+SS -> DB: create Service record (Service table)
+alt service_type == cservice
+    SS -> DB: create CService (caretaker-specific subrecord)
+else service_type == mservice
+    SS -> DB: create MService (medical-specific subrecord)
+end
+DB --> SS: service + subservice created
+SS --> API: service, subservice
+
+API --> FE: redirect back to booking page (payment success, service created)
+
+note right of FE
+  Final state: Payment status = PAID; Service and subservice exist and are linked to payment.
+end note
+
+@enduml

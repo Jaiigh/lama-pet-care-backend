@@ -17,6 +17,7 @@ type petRepository struct {
 type IPetRepository interface {
 	InsertPet(data entities.CreatedPetModel) (*entities.PetDataModel, error)
 	FindByOwnerID(ownerID string) ([]entities.PetDataModel, error)
+	FindPetByID(petID string) (*entities.PetDataModel, error)
 	FindAll() ([]entities.PetDataModel, error)
 	UpdatePet(petID string, data entities.UpdatePetModel) (*entities.PetDataModel, error)
 	DeletePet(petID string) (*entities.PetDataModel, error)
@@ -88,6 +89,33 @@ func (repo *petRepository) FindByOwnerID(ownerID string) ([]entities.PetDataMode
 	}
 
 	return results, nil
+}
+
+func (repo *petRepository) FindPetByID(petID string) (*entities.PetDataModel, error) {
+	pet, err := repo.Collection.Pet.FindUnique(
+		db.Pet.Petid.Equals(petID),
+	).Exec(repo.Context)
+
+	if err != nil {
+		return nil, fmt.Errorf("pets -> FindPetByID: %w", err)
+	}
+	if pet == nil {
+		return nil, fmt.Errorf("pets -> FindPetByID: pet not found")
+	}
+
+	breed, _ := pet.Breed()
+	name, _ := pet.Name()
+
+	return &entities.PetDataModel{
+		PetID:     pet.Petid,
+		OwnerID:   pet.Oid,
+		Breed:     breed,
+		Name:      name,
+		BirthDate: pet.Birthdate,
+		Weight:    pet.Weight,
+		Kind:      pet.Kind,
+		Sex:       pet.Sex,
+	}, nil
 }
 
 func (repo *petRepository) FindAll() ([]entities.PetDataModel, error) {
