@@ -824,47 +824,6 @@ const docTemplate = `{
             }
         },
         "/pets": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "admin can fetch all pets",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pet"
-                ],
-                "summary": "get all pets",
-                "responses": {
-                    "200": {
-                        "description": "Request successful",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseModel"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorization Token.",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "403": {
-                        "description": "Invalid role",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/entities.ResponseMessage"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -959,6 +918,49 @@ const docTemplate = `{
                         "description": "Invalid owner ID",
                         "schema": {
                             "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorization Token.",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/pets/{ownerID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "admin can fetch all pets (provide ownerID in path)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pet"
+                ],
+                "summary": "get all pets for specified owner",
+                "responses": {
+                    "200": {
+                        "description": "Request successful",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResponseModel"
                         }
                     },
                     "401": {
@@ -2005,11 +2007,8 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
-                "disease": {
-                    "type": "string",
-                    "minLength": 1
-                },
                 "owner_id": {
+                    "description": "for admin",
                     "type": "string"
                 },
                 "payment_id": {

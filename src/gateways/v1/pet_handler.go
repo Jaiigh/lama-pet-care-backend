@@ -102,15 +102,15 @@ func (h *HTTPGateway) FindByOwnerID(ctx *fiber.Ctx) error {
 	})
 }
 
-// @Summary get all pets
-// @Description admin can fetch all pets
+// @Summary get all pets for specified owner
+// @Description admin can fetch all pets (provide ownerID in path)
 // @Tags pet
 // @Produce json
 // @Success 200 {object} entities.ResponseModel "Request successful"
 // @Failure 401 {object} entities.ResponseMessage "Unauthorization Token."
 // @Failure 403 {object} entities.ResponseMessage "Invalid role"
 // @Failure 500 {object} entities.ResponseMessage "Internal server error"
-// @Router /pets [get]
+// @Router /pets/{ownerID} [get]
 // @Security BearerAuth
 func (h *HTTPGateway) FindAllPets(ctx *fiber.Ctx) error {
 	token, err := middlewares.DecodeJWTToken(ctx)
@@ -118,12 +118,17 @@ func (h *HTTPGateway) FindAllPets(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(entities.ResponseMessage{Message: "Unauthorization Token."})
 	}
 
-	// Only admin allowed to fetch all pets
+	// This endpoint is owner-only: ownerID must come from the JWT token.
 	if token.Role != "admin" {
 		return ctx.Status(fiber.StatusForbidden).JSON(entities.ResponseMessage{Message: "Invalid role"})
 	}
 
-	pets, err := h.PetService.FindAll()
+	ownerID := ctx.Params("ownerID")
+	if ownerID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(entities.ResponseMessage{Message: "invalid owner ID"})
+	}
+
+	pets, err := h.PetService.FindByOwnerID(ownerID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(entities.ResponseMessage{Message: err.Error()})
 	}
