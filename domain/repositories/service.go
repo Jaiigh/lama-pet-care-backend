@@ -554,7 +554,7 @@ func getSqlService(sqltype, userID string, status string, month, year int) (stri
 		whereSQL += fmt.Sprintf(`"OID" = $%d::uuid`, idx)
 		args = append(args, userID)
 		idx++
-	case "doctor":
+	case "caretaker":
 		whereSQL += fmt.Sprintf(`
         EXISTS (
             SELECT 1 FROM "Cservice"
@@ -564,7 +564,7 @@ func getSqlService(sqltype, userID string, status string, month, year int) (stri
 		`, idx)
 		args = append(args, userID)
 		idx++
-	case "caretaker":
+	case "doctor":
 		whereSQL += fmt.Sprintf(`
         EXISTS (
             SELECT 1 FROM "Mservice"
