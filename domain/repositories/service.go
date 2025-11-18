@@ -578,7 +578,10 @@ func getSqlService(sqltype, userID string, status string, month, year int) (stri
 	}
 
 	if status != "" && status != "all" {
-		whereSQL += fmt.Sprintf("status = $%d", idx)
+		if whereSQL != "" {
+			whereSQL += " AND "
+		}
+		whereSQL += fmt.Sprintf(`status = $%d::service_status`, idx)
 		args = append(args, status)
 		idx++
 	}
